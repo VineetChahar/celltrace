@@ -1,0 +1,6 @@
+{"ts": 5.0, "session_id": "sA", "ue_pseudo": "ue_1", "layer": "RRC", "msg_type": "RRCSetupRequest", "direction": "UE->gNB", "cell_id": "cell_00", "fields": {"establishmentCause": "mo-Data"}}
+{"ts": 1.0, "session_id": "sA", "ue_pseudo": "ue_1", "layer": "RRC", "msg_type": "RRCSetup", "direction": "gNB->UE", "cell_id": "cell_00", "fields": {"rrc-TransactionIdentifier": 1}}
+this is not json at all
+{"ts": 3.0, "session_id": "sA", "ue_pseudo": "ue_1", "layer": "RRC", "msg_type": "RRCSetupComplete"
+{"ts": 2.0, "session_id": "sB", "ue_pseudo": "ue_2", "layer": "RRC", "msg_type": "RRCSetupRequest", "direction": "UE->gNB", "cell_id": "cell_01", "fields": {"establishmentCause": "mo-Signalling"}}
+{"ts": 4.0, "session_id": "sA", "ue_pseudo": "ue_1", "layer": "RRC", "msg_type": "RRCRelease", "direction": "gNB->UE", "cell_id": "cell_00", "fields": {"cause": "normal"}}

@@ -1,0 +1,24 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - CELLTRACE_MODEL=qwen2.5:3b-instruct
+    volumes:
+      - ./data:/app/data
+      - ./eval_results:/app/eval_results
+    command: ["python", "-m", "eval.run_eval"]
+
+volumes:
+  ollama_data:

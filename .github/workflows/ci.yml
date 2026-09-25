@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cpp-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ ninja-build
+      - name: Configure (ASan+UBSan)
+        run: >
+          cmake -S parser -B parser/build_san -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug -DCELLTRACE_SANITIZE=ON -DCELLTRACE_BUILD_BENCH=OFF
+      - name: Build tests
+        run: cmake --build parser/build_san --target celltrace_tests
+      - name: Run tests under ASan+UBSan
+        run: ./parser/build_san/celltrace_tests
+
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install system build deps
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pybind11 numpy pytest
+      - name: Build pybind11 extension
+        run: |
+          cmake -S parser -B parser/build -DCMAKE_BUILD_TYPE=Release -DCELLTRACE_BUILD_TESTS=OFF -DCELLTRACE_BUILD_BENCH=OFF
+          cmake --build parser/build -j 2
+      - name: Generate synthetic data
+        run: python -m synthesizer.generator --seed 42
+      - name: Run Python unit tests
+        run: pytest tests/ -v

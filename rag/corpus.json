@@ -1,0 +1,152 @@
+[
+  {
+    "id": "AUTH_BAD_KEY-1",
+    "fault_type": "AUTH_BAD_KEY",
+    "title": "Authentication Reject right after Authentication Response",
+    "text": "Symptom: NAS layer shows AuthenticationRequest from the AMF, then an AuthenticationResponse from the UE, then immediately an AuthenticationReject from the AMF, and the session ends with an RRCRelease shortly after. Root cause: the UE's computed RES* did not match the network's expected XRES*, which the AMF interprets as a MAC failure on the authentication vector -- in practice this happens when the UE's stored subscriber key is out of sync with what the HSS/UDM has provisioned. Distinguishing feature: no SecurityModeCommand ever appears in the trace, because the AMF refuses to proceed past authentication."
+  },
+  {
+    "id": "AUTH_BAD_KEY-2",
+    "fault_type": "AUTH_BAD_KEY",
+    "title": "Why AuthenticationReject always follows the Response, never the Request",
+    "text": "The AUTH_BAD_KEY failure mode is only ever visible on the NAS layer, never on RRC or PHY -- RRC setup completes fine and PHY signal quality is typically normal, because the UE has a perfectly good radio connection, it just can't prove its identity. If you see a clean RRCSetupComplete followed by a NAS authentication exchange that dies immediately, check the AuthenticationResponse's authParamRES against what a correct key derivation would produce before assuming it's a radio problem."
+  },
+  {
+    "id": "REG_TIMEOUT_DROPPED_NAS-1",
+    "fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "title": "UE stuck retransmitting RegistrationRequest",
+    "text": "Symptom: the trace shows a normal RRC setup, authentication, and security mode exchange all succeeding, but then a second RegistrationRequest appears roughly 16 seconds after the first one, with no RegistrationAccept or RegistrationReject in between. Root cause: the network's RegistrationAccept was dropped in transit (never delivered to the UE) -- this is a lower-layer delivery failure, not a NAS protocol rejection. The UE's T3510 registration timer expired and it retried per spec. Distinguishing feature: there's a real ~16s gap with nothing at all on the NAS layer for that session, unlike an explicit reject which would arrive within milliseconds."
+  },
+  {
+    "id": "REG_TIMEOUT_DROPPED_NAS-2",
+    "fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "title": "Distinguishing a dropped RegistrationAccept from a slow network",
+    "text": "A dropped RegistrationAccept looks superficially like network congestion, but the tell is that everything else in the exchange (RRC setup, authentication, security mode) completed at normal speed -- only the very last message of the registration procedure vanished. If PHY signal quality was fine throughout and RRC layer shows no reject/release before the retry, the most likely explanation is a one-off delivery failure of the accept message itself, not a systemic radio or congestion issue."
+  },
+  {
+    "id": "RRC_CONN_FAIL_CONGESTION-1",
+    "fault_type": "RRC_CONN_FAIL_CONGESTION",
+    "title": "RRCReject with cause=congestion right after RRCSetupRequest",
+    "text": "Symptom: the very first RRC message after RRCSetupRequest is an RRCReject (not an RRCSetup), with cause field set to 'congestion' and a wait-time (rrc-RejectWaitTime) telling the UE when to retry. Root cause: the serving cell has no free signalling radio bearer resources to admit a new connection at that moment. Distinguishing feature: this fault never reaches the NAS layer at all -- there is no RegistrationRequest anywhere in the session, because the UE never got past RRC setup. Don't go looking for a NAS or PHY explanation for this one; the failure happens too early in the sequence to have anything to do with them."
+  },
+  {
+    "id": "RRC_CONN_FAIL_CONGESTION-2",
+    "fault_type": "RRC_CONN_FAIL_CONGESTION",
+    "title": "Congestion rejects are a cell-level, not a UE-level, problem",
+    "text": "If multiple different UEs in the same cell show the identical pattern (RRCSetupRequest immediately answered with RRCReject cause=congestion) in a similar time window, that's a cell capacity problem, not something specific to one subscriber. PHY signal quality for the rejected UE is usually fine -- congestion is about admission control resource limits, not radio conditions."
+  },
+  {
+    "id": "HO_MISSED_MEASUREMENT-1",
+    "fault_type": "HO_MISSED_MEASUREMENT",
+    "title": "RSRP crosses handover threshold but no MeasurementReport ever appears",
+    "text": "Symptom: PHY-layer RSRP steadily degrades from around -88 dBm down past -110 dBm over roughly 15-20 seconds, crossing what would normally be an A3-event handover trigger threshold, but no MeasurementReport shows up on the RRC layer during that decline, and consequently no RRCReconfiguration (handover command) is ever issued. The session eventually ends with an RRCRelease. Root cause: the UE failed to report the measurement that should have triggered a handover -- often because the UE's measurement reporting itself failed or was delayed past the point where a handover could still succeed. Distinguishing feature: this requires cross-referencing PHY and RRC together -- looking at either layer alone, nothing looks obviously broken."
+  },
+  {
+    "id": "HO_MISSED_MEASUREMENT-2",
+    "fault_type": "HO_MISSED_MEASUREMENT",
+    "title": "The absence of a MeasurementReport is itself the evidence",
+    "text": "This is one of the harder fault types to catch because there's no error message to point at -- the diagnostic signal is a message that should exist but doesn't. If you see PHY RSRP crossing a typical handover trigger range (below about -105 dBm) with no corresponding MeasurementReport in the RRC log for that session in the surrounding window, and no RRCReconfiguration with mobilityControlInfo follows, that gap is the root cause, not a coincidence."
+  },
+  {
+    "id": "HANDOVER_RECONFIG_TIMEOUT-1",
+    "fault_type": "HANDOVER_RECONFIG_TIMEOUT",
+    "title": "RRCReconfiguration sent for handover but Complete never arrives",
+    "text": "Symptom: a normal MeasurementReport is followed by an RRCReconfiguration containing mobilityControlInfo (a real handover command to a target cell), but no RRCReconfigurationComplete follows within about 1 second. Instead, the UE sends an RRCReestablishmentRequest with cause 'handoverFailure', which the serving cell rejects (RRCReestablishmentReject) because it has no prepared context for that UE anymore. Root cause: the handover's t304 timer expired -- the UE could not successfully complete the reconfiguration at the target cell, most often due to a radio link problem specifically at the target, not the source, cell."
+  },
+  {
+    "id": "HANDOVER_RECONFIG_TIMEOUT-2",
+    "fault_type": "HANDOVER_RECONFIG_TIMEOUT",
+    "title": "Handover failure vs missed-measurement failure: same symptom family, different evidence",
+    "text": "Both HANDOVER_RECONFIG_TIMEOUT and HO_MISSED_MEASUREMENT end in a dropped connection during what should have been a routine handover, but the trace tells them apart clearly: if a MeasurementReport AND an RRCReconfiguration with mobilityControlInfo both exist in the log but RRCReconfigurationComplete is missing, that's a reconfiguration/t304 timeout at the target cell. If the MeasurementReport itself never appears despite clearly declining PHY signal, that's a missed measurement, and there's no RRCReconfiguration at all to point at."
+  },
+  {
+    "id": "PHY_SIGNAL_RLF-1",
+    "fault_type": "PHY_SIGNAL_RLF",
+    "title": "Steady signal degradation leading to radio link failure",
+    "text": "Symptom: PHY RSRP and SINR both decay steadily and substantially (RSRP below roughly -115 dBm, SINR pushing negative) over 10+ seconds with no handover attempted or completed anywhere in the RRC log during that decline. The session ends with an RRCReestablishmentRequest (cause 'otherFailure') that gets rejected. Root cause: genuine radio link failure from poor coverage -- unlike HO_MISSED_MEASUREMENT, there isn't even a measurement-reporting gap to blame; the cell/network simply had no viable handover target or didn't attempt one in time as the signal fell."
+  },
+  {
+    "id": "PHY_SIGNAL_RLF-2",
+    "fault_type": "PHY_SIGNAL_RLF",
+    "title": "Reading SINR alongside RSRP for radio link failure cases",
+    "text": "RSRP alone can look only moderately bad while SINR (which reflects interference, not just path loss) has already crossed out-of-sync territory -- in true PHY_SIGNAL_RLF cases both metrics decline together across the whole window, not just one. If RSRP is poor but SINR stayed reasonable, or vice versa, reconsider whether this is really a pure radio problem."
+  },
+  {
+    "id": "SECURITY_MODE_FAILURE-1",
+    "fault_type": "SECURITY_MODE_FAILURE",
+    "title": "SecurityModeReject after a handover",
+    "text": "Symptom: a MeasurementReport, RRCReconfiguration, and RRCReconfigurationComplete all succeed (a clean handover), but shortly after, a NAS SecurityModeCommand is met with a SecurityModeReject (cause 'security-mode-failure') instead of a Complete. Root cause: the security key context (ngKSI) used post-handover was stale or mismatched relative to what the UE actually holds, so the UE's integrity check on the SecurityModeCommand fails. Distinguishing feature: the RRC handover itself is entirely successful in the trace -- the failure is purely on the NAS layer, immediately after."
+  },
+  {
+    "id": "SECURITY_MODE_FAILURE-2",
+    "fault_type": "SECURITY_MODE_FAILURE",
+    "title": "Don't blame the handover itself for a post-handover security failure",
+    "text": "Because SECURITY_MODE_FAILURE always follows a successful RRCReconfigurationComplete, it's tempting to suspect the handover procedure -- but the RRC layer here shows nothing wrong. The evidence to cite is specifically the NAS-layer SecurityModeCommand/SecurityModeReject pair and the ngKSI value used, not anything from RRC."
+  },
+  {
+    "id": "SERVICE_REQUEST_NO_CONTEXT-1",
+    "fault_type": "SERVICE_REQUEST_NO_CONTEXT",
+    "title": "ServiceReject with cause=no-context",
+    "text": "Symptom: the UE goes through a fresh RRCSetupRequest/RRCSetup/RRCSetupComplete cycle (often after a period of RRC idle), then sends a NAS ServiceRequest, and gets back a ServiceReject with cause 'no-context' rather than being admitted. Root cause: the AMF had already discarded the UE's stored context (e.g. after a context timeout during a long idle period) by the time the UE tried to resume service, so the AMF has nothing to match the ServiceRequest against. Distinguishing feature: this always follows a *second* RRC setup cycle for the same UE, later in time than its original registration -- it isn't a first-attempt failure."
+  },
+  {
+    "id": "SERVICE_REQUEST_NO_CONTEXT-2",
+    "fault_type": "SERVICE_REQUEST_NO_CONTEXT",
+    "title": "no-context rejects mean look for a gap before the ServiceRequest, not after",
+    "text": "The useful diagnostic move for a ServiceReject(no-context) is to look backward in the session's history for how long the UE was idle before this attempt, not forward -- the root cause already happened (context expiry) before the ServiceRequest was even sent."
+  },
+  {
+    "id": "PAGING_TIMEOUT-1",
+    "fault_type": "PAGING_TIMEOUT",
+    "title": "Paging sent but no RRCSetupRequest response ever follows",
+    "text": "Symptom: an RRC-layer Paging message is sent to an idle UE, but no RRCSetupRequest from that UE appears afterward within the paging timer window -- the UE simply never responds. Root cause: the UE was unreachable at the time of paging, commonly from being out of coverage, powered off, or in a DRX cycle misaligned with the paging occasion. Distinguishing feature: there's no NAS layer activity at all associated with this incident -- the failure happens before the UE even re-establishes RRC, so NAS and PHY tools will come back empty for this session in the reported window."
+  },
+  {
+    "id": "PAGING_TIMEOUT-2",
+    "fault_type": "PAGING_TIMEOUT",
+    "title": "Paging timeouts look like silence, not an error message",
+    "text": "Unlike most other fault types, PAGING_TIMEOUT produces no reject or failure message anywhere -- the entire signature is a Paging message followed by nothing. If a symptom report mentions data or a call not reaching a device, and the RRC log's last event for that session/timeframe is a lone Paging with no follow-up, that absence is the finding."
+  },
+  {
+    "id": "DEREGISTRATION_IMPLICIT-1",
+    "fault_type": "DEREGISTRATION_IMPLICIT",
+    "title": "AMF-internal implicit deregistration after missed periodic update",
+    "text": "Symptom: a UE that registered and released normally simply never reappears with a periodic registration update, and after roughly 50-60 seconds of silence an internal AMF event (logged as ImplicitDeregistration, reason 'periodic-registration-timer-expired') appears on the NAS layer -- this is not an over-the-air message, it's a core-network-internal context-drop record. Root cause: the UE missed its periodic registration update (commonly because it went out of coverage or lost power) and the network's mobile-reachable timer expired, causing the AMF to implicitly deregister it without ever notifying the UE (since it can't be reached anyway)."
+  },
+  {
+    "id": "DEREGISTRATION_IMPLICIT-2",
+    "fault_type": "DEREGISTRATION_IMPLICIT",
+    "title": "Implicit deregistration vs paging timeout: which silence you're looking at",
+    "text": "Both PAGING_TIMEOUT and DEREGISTRATION_IMPLICIT are 'nothing happened' failures, but they're triggered from opposite directions: paging timeout is the network trying to reach an idle UE and failing; implicit deregistration is the UE failing to check in with the network on its own schedule. If the reported symptom is 'UE unreachable for incoming data/call', suspect paging timeout; if it's 'device dropped off the network entirely with no report of it doing anything', suspect implicit deregistration."
+  },
+  {
+    "id": "GENERAL-1",
+    "fault_type": "GENERAL",
+    "title": "General triage order: RRC, then NAS, then PHY, then compare",
+    "text": "A reasonable default investigation order for an unexplained connection-drop report is: check RRC first for an explicit reject/release/reestablishment near the reported time, then NAS for an explicit reject/failure message, then PHY for signal-quality context around the same window. Most fault types in this system are only fully explained by looking at at least two of these three layers together -- a single-layer read is rarely sufficient."
+  },
+  {
+    "id": "GENERAL-2",
+    "fault_type": "GENERAL",
+    "title": "Normal RSRP/RSRQ/SINR ranges for this network",
+    "text": "In this deployment's normal operating range, RSRP between about -70 and -95 dBm and SINR above roughly 5 dB is considered healthy service. RSRP below about -105 dBm or SINR below 0 dB indicates degraded conditions that would normally trigger a measurement report and possible handover. RSRP below about -115 dBm or SINR below -6 dB is consistent with imminent or actual radio link failure."
+  },
+  {
+    "id": "GENERAL-3",
+    "fault_type": "GENERAL",
+    "title": "Cause codes cheat sheet",
+    "text": "RRCReject cause 'congestion' means admission control resource exhaustion at the cell, unrelated to the specific UE. RRCRelease cause 'radioNetwork' or an RRCReestablishmentRequest with cause 'otherFailure'/'handoverFailure' both point to a radio-link-level problem, but 'handoverFailure' specifically implicates a reconfiguration/target-cell issue rather than general coverage. NAS AuthenticationReject cause 'MAC-failure' points at a subscriber-key mismatch. NAS SecurityModeReject cause 'security-mode-failure' points at a stale or mismatched security context, most often right after a handover. NAS ServiceReject cause 'no-context' means the AMF had already dropped the UE's stored context before the request arrived."
+  },
+  {
+    "id": "GENERAL-4",
+    "fault_type": "GENERAL",
+    "title": "What a healthy session looks like end to end",
+    "text": "A fault-free session looks like: RRCSetupRequest -> RRCSetup -> RRCSetupComplete, then NAS RegistrationRequest -> AuthenticationRequest -> AuthenticationResponse -> SecurityModeCommand -> SecurityModeComplete -> RegistrationAccept -> RegistrationComplete, optionally a MeasurementReport -> RRCReconfiguration -> RRCReconfigurationComplete handover partway through, occasional ServiceRequests, and eventually an RRCRelease with cause 'normal'. Any deviation from this shape -- a missing step, an unexpected reject, or an unusually long gap between two adjacent steps -- is the thing worth explaining."
+  },
+  {
+    "id": "GENERAL-5",
+    "fault_type": "GENERAL",
+    "title": "Timing gaps as evidence",
+    "text": "Real protocol timers matter for diagnosis: T3510 (registration) is on the order of 15-16 seconds, t304 (handover reconfiguration) is on the order of 1 second, and the mobile-reachable timer behind implicit deregistration is on the order of a minute. A gap of a couple seconds in a trace is unremarkable; a gap that matches one of these timer durations almost exactly is a strong hint about which specific timeout fired."
+  }
+]

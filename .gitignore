@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+build/
+build_release/
+build_san/
+*.o
+*.so
+*.dylib
+data/logs/*.jsonl
+data/incidents.jsonl
+data/rag_index.npz
+.DS_Store
+*.egg-info/
+eval_results/run.log
