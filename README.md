@@ -82,13 +82,18 @@ happens in C++, exposed to Python as a pybind11 native extension
   per-layer stores are sorted by timestamp once ingestion completes, so
   out-of-order arrival (real logs aren't always delivered in order) doesn't
   break windowed queries.
-- **Unit tests** (Catch2, 35 test cases / 200,101 assertions): valid parsing,
-  malformed JSON (truncated objects/arrays/strings, bad literals, unescaped
-  control characters, trailing garbage), missing/wrong-typed envelope fields,
-  a concurrent 200k-item producer/consumer ordering stress test, and a
+- **Unit tests** (Catch2, 35 test cases): valid parsing, malformed JSON
+  (truncated objects/arrays/strings, bad literals, unescaped control
+  characters, trailing garbage), missing/wrong-typed envelope fields, a
   file-based integration test through the real threaded ingestion pipeline
-  against a fixture file with malformed lines mixed into valid ones. **Clean
-  under AddressSanitizer + UndefinedBehaviorSanitizer.**
+  against a fixture file with malformed lines mixed into valid ones, and a
+  concurrent producer/consumer ordering stress test that pushes 200,000 items
+  through the ring buffer and individually checks each one arrived, in order,
+  exactly once. That stress test alone accounts for 200,001 of the suite's
+  200,101 total Catch2 assertions -- the other 34 test cases contribute the
+  remaining ~100, which is the more normal number to compare against
+  hand-written correctness checks. **Clean under AddressSanitizer +
+  UndefinedBehaviorSanitizer.**
 
 **Throughput** (synthetic benchmark, `parser/benchmarks/bench_throughput.cpp`,
 Release build, Apple M-series):
@@ -166,60 +171,60 @@ Run: `python -m eval.run_eval` (or `make eval` / `make docker-eval`). Every one
 of the 86 labeled incidents is run through a fresh investigation against the
 real `LogStore`, using the real local model -- no shortcuts, no mocked tools.
 
-**Overall root-cause accuracy: 24.4% (86/86 incidents, `qwen2.5:3b-instruct`).**
-Reported honestly, per fault type, because it isn't one blended number worth
-hiding behind:
+**Current numbers (post diagnose-then-fix pass, detailed below): overall
+root-cause accuracy 25.6%, citation hallucination rate 58.1% (86/86
+incidents, `qwen2.5:3b-instruct`).** The very first run before that pass
+scored 24.4% / 75.6% -- both are reported, and the full story of what
+changed and why is in "Diagnose-then-fix pass" further down. Reported
+honestly, per fault type, because it isn't one blended number worth hiding
+behind:
 
 | fault_type | n | correct | accuracy |
 |---|---:|---:|---:|
-| RRC_CONN_FAIL_CONGESTION | 10 | 6 | 60.0% |
-| SERVICE_REQUEST_NO_CONTEXT | 10 | 5 | 50.0% |
-| PHY_SIGNAL_RLF | 8 | 3 | 37.5% |
-| AUTH_BAD_KEY | 6 | 2 | 33.3% |
-| DEREGISTRATION_IMPLICIT | 7 | 2 | 28.6% |
-| SECURITY_MODE_FAILURE | 8 | 2 | 25.0% |
-| REG_TIMEOUT_DROPPED_NAS | 10 | 1 | 10.0% |
-| HANDOVER_RECONFIG_TIMEOUT | 10 | 0 | 0.0% |
+| AUTH_BAD_KEY | 6 | 6 | 100.0% |
+| RRC_CONN_FAIL_CONGESTION | 10 | 7 | 70.0% |
+| SERVICE_REQUEST_NO_CONTEXT | 10 | 3 | 30.0% |
+| PHY_SIGNAL_RLF | 8 | 2 | 25.0% |
+| HANDOVER_RECONFIG_TIMEOUT | 10 | 2 | 20.0% |
+| DEREGISTRATION_IMPLICIT | 7 | 1 | 14.3% |
+| SECURITY_MODE_FAILURE | 8 | 1 | 12.5% |
 | HO_MISSED_MEASUREMENT | 7 | 0 | 0.0% |
 | PAGING_TIMEOUT | 10 | 0 | 0.0% |
+| REG_TIMEOUT_DROPPED_NAS | 10 | 0 | 0.0% |
 
-The split is not random. **The agent does reasonably well on fault types with
-one explicit, unambiguous reject message in a single layer** (a plain
-RRCReject or ServiceReject) and **fails completely on fault types whose
-signature is the *absence* of an expected message, or requires correlating
-two layers to notice that absence** (a MeasurementReport that should have
-been sent but wasn't; an RRCReconfigurationComplete that never arrives; a
-Paging message nobody answers). `qwen2.5:3b-instruct` is a small, local,
-3-billion-parameter model -- this result is a real, if unflattering, measure
-of what that scale can and can't do on genuinely open-ended cross-layer
-diagnostic reasoning, not a bug being reported around.
+The split is still not random, though the pattern shifted after the fix (see
+below for why). **The agent is now excellent on fault types resolved from a
+single explicit signal in one layer** (`AUTH_BAD_KEY`: 100%,
+`RRC_CONN_FAIL_CONGESTION`: 70%) and **still fails on fault types whose
+signature is the *absence* of an expected message, or a pattern that only
+shows up after correlating a time gap against a specific timer duration**
+(`HO_MISSED_MEASUREMENT`, `PAGING_TIMEOUT`, `REG_TIMEOUT_DROPPED_NAS`, all at
+0%). `qwen2.5:3b-instruct` is a small, local, 3-billion-parameter model, and
+Part 3 of the diagnose-then-fix pass below tests directly whether that's
+actually why the 0%-accuracy group stays at 0%.
 
-**Citation grounding: 75.6% of investigations contain at least one fabricated
-or misquoted citation.** Breaking that down (see
-`eval/recompute_verification.py`'s output): the dominant cause (49 of 65
-flagged investigations) is the agent submitting **zero citations** alongside
-a guess -- which this harness counts as ungrounded, correctly, since a claim
-with no evidence isn't grounded regardless of whether the guess happened to
-be right. A smaller number are genuinely invented evidence: timestamps that
-look like Unix epoch values (`1583930304.021`) instead of this project's
-simulation-clock seconds, or timestamps a few tenths of a second off from
-any real message. (An earlier version of this verifier flagged citations
+**Citation grounding: 58.1% of investigations contain at least one fabricated
+or misquoted citation** (down from 75.6% before the fix -- see below).
+Breaking down what's left: a mix of the agent still submitting zero
+citations alongside a guess (which this harness counts as ungrounded,
+correctly, since a claim with no evidence isn't grounded regardless of
+whether the guess happened to be right) and genuinely invented evidence --
+notably timestamps that look like Unix epoch values (`1583930304.021`)
+instead of this project's simulation-clock seconds, a pattern documented in
+LEARNING.md. (An earlier version of this verifier also flagged citations
 that quoted a real field value in readable prose, e.g. `"-107.6 dBm"` for
 `{"rsrp_dbm": -107.6}`, as fabricated purely because it wasn't a verbatim
 JSON substring -- that was a bug in the *checker*, not the agent, fixed by
-also matching on real field values/numbers with rounding tolerance, not just
-raw-string containment; see LEARNING.md. The 75.6% above is post-fix.)
+also matching on real field values/numbers with rounding tolerance. All
+numbers in this README are post that fix.)
 
-**Tool-use efficiency**: average 3.85 tool calls per investigation (median 3).
-Investigations that stayed at or below the median tool-call count scored
-**34.1% accuracy**; investigations that needed more tool calls than that
-scored **14.3%**. This answers the spec's efficiency question directly: more
-tool calls here does **not** mean the agent successfully dug deeper to crack
-a hard case -- it means the case was hard, the agent kept poking at it, and
-still got it wrong more often than not. The "decide to look further" behavior
-is working exactly as designed (it does check more layers when the first one
-is inconclusive -- see the example transcript below), it just isn't enough to
-overcome this model's limits on the hardest fault types.
+**Tool-use efficiency**: average 1.83 tool calls per investigation (median
+2, down from 3.85/3 before the fix -- see below for why). Investigations at
+or below the median scored 30.0% accuracy; investigations above it scored
+6.25%. Same direction as before the fix: more tool calls here still tracks
+"this case was hard" rather than "the agent successfully dug deeper," though
+both numbers dropped alongside the overall drop in investigation depth
+discussed below.
 
 ![Accuracy vs. investigation length](eval_results/tool_calls_vs_accuracy.png)
 
@@ -236,6 +241,104 @@ at that layer/ts/session at all, or if one does but nothing in the quote
 matches its real content. This means a "hallucination" here is the agent
 misquoting its own tool output (or citing nothing), not a discrepancy between
 the parser and some other source of truth.
+
+### Diagnose-then-fix pass
+
+The first full run scored 24.4% accuracy / 75.6% citation hallucination.
+Rather than guess at a fix, every ungrounded investigation's raw transcript
+was read and classified before changing any code:
+
+| category (of 65 ungrounded investigations) | count | share |
+|---|---:|---:|
+| Answered but never invoked -- a correct, fully-formed answer written as prose, `submit_root_cause` never actually called | 27 | 42% |
+| Incomplete -- still mid-investigation when the step budget ran out | 21 | 32% |
+| Fabricated/misquoted -- a real tool call, but the citation genuinely doesn't match | 14 | 22% |
+| True abstention / one-off cases (wrong-layer label on real content, absence-of-evidence forced into the citation schema) | 3 | 4% |
+
+**74% of ungrounded investigations were a format/completion problem, not a
+reasoning problem** -- confirmed by spot-checking 6 of the 0%-accuracy
+cross-layer cases: the agent reached the correct layer(s) in every one of
+them, it just failed to land a structured final answer. Full transcripts,
+concrete examples, and the invented-Unix-epoch-timestamp pattern found in the
+genuine-fabrication cases are in [LEARNING.md](LEARNING.md).
+
+Fix: evidence-gathering still uses native tool-calling (it worked reliably),
+but the final answer is now produced by a dedicated call using Ollama's
+JSON-schema-constrained structured output instead of a native
+`submit_root_cause` tool call, with an explicit `insufficient_evidence`
+boolean kept separate from `fault_type` so a genuine "I don't know" is a
+valid, honest, scoreable answer rather than indistinguishable from a bad
+guess (`agent/investigator.py`).
+
+**Before / after, full 86-incident re-run:**
+
+| metric | before | after | delta |
+|---|---:|---:|---:|
+| Overall accuracy | 24.4% | 25.6% | +1.2pp |
+| Citation hallucination rate | 75.6% | 58.1% | **-17.5pp** |
+| Avg tool calls / investigation | 3.85 | 1.83 | -2.02 |
+
+| fault_type | before | after | delta |
+|---|---:|---:|---:|
+| AUTH_BAD_KEY | 33.3% | 100.0% | **+66.7pp** |
+| HANDOVER_RECONFIG_TIMEOUT | 0.0% | 20.0% | +20.0pp |
+| RRC_CONN_FAIL_CONGESTION | 60.0% | 70.0% | +10.0pp |
+| HO_MISSED_MEASUREMENT | 0.0% | 0.0% | +0.0pp |
+| PAGING_TIMEOUT | 0.0% | 0.0% | +0.0pp |
+| REG_TIMEOUT_DROPPED_NAS | 10.0% | 0.0% | -10.0pp |
+| PHY_SIGNAL_RLF | 37.5% | 25.0% | -12.5pp |
+| SECURITY_MODE_FAILURE | 25.0% | 12.5% | -12.5pp |
+| DEREGISTRATION_IMPLICIT | 28.6% | 14.3% | -14.3pp |
+| SERVICE_REQUEST_NO_CONTEXT | 50.0% | 30.0% | -20.0pp |
+
+**Citation grounding improved substantially and overall accuracy moved only
+slightly, because the fix traded investigation depth for completion
+reliability.** Average tool calls per investigation dropped from 3.85 to
+1.83 -- the new flow finalizes as soon as the model stops issuing tool calls
+instead of nudging it to keep going, so a shallow, quick-to-resolve fault
+type wins big (`AUTH_BAD_KEY`: 33.3% -> 100.0%, its whole signature is one
+NAS exchange) while fault types that benefited from a longer, multi-layer
+dig got shallower and lost ground (`SERVICE_REQUEST_NO_CONTEXT`: 50.0% ->
+30.0%; `REG_TIMEOUT_DROPPED_NAS`: 10.0% -> 0.0%). `HANDOVER_RECONFIG_TIMEOUT`
+went from completely unsolved to 20% -- the format fix alone was enough to
+recover some real, previously-unreachable answers. The two fault types
+requiring the hardest absence-of-evidence + cross-layer correlation
+(`HO_MISSED_MEASUREMENT`, `PAGING_TIMEOUT`) stayed at 0% -- this is exactly
+Part 3's question.
+
+One more real, positive number the old design couldn't produce at all: **20
+of 86 investigations now honestly set `insufficient_evidence: true`** instead
+of silently guessing "OTHER" -- a genuine, machine-checkable "I don't know"
+that the harness can now tell apart from a wrong guess, which is what Part
+2 was actually supposed to add on top of the raw accuracy/hallucination
+numbers.
+
+**Larger local model on the cross-layer gap:**
+
+Re-ran the same agent logic, unchanged, pointed at `qwen2.5:7b-instruct`
+(more than double the parameters) instead of `qwen2.5:3b-instruct`, on just
+the 27 incidents from the three still-0%-accuracy fault types
+(`HO_MISSED_MEASUREMENT`, `PAGING_TIMEOUT`, `REG_TIMEOUT_DROPPED_NAS`):
+
+| metric | 3B model | 7B model |
+|---|---:|---:|
+| Accuracy on this 27-incident subset | 0/27 (0.0%) | 0/27 (0.0%) |
+| Citation hallucination rate | 85.2% (23/27) | 85.2% (23/27) -- identical count |
+| Avg tool calls / investigation | 2.30 | 3.93 |
+
+**The bigger model did not help at all -- 0% both times, and the exact same
+23/27 investigations produced an ungrounded citation, not just a similar
+rate.** It wasn't for lack of effort: the 7B model made 71% more tool calls
+on average (3.93 vs 2.30), genuinely investigating more before answering. It
+still couldn't crack this subset. This is a real, useful negative result: it
+argues the gap here isn't raw model capacity, it's something about how these
+three fault types' evidence is structured (an *absence* of an expected
+message, or a pattern that only becomes visible by explicitly comparing a
+gap against a specific timer duration) that neither model size handles with
+the current tool set and prompting -- closing it would need a different kind
+of scaffolding (e.g. a tool that explicitly answers "was message X missing
+between t1 and t2", instead of expecting the model to notice an absence on
+its own from a list of what *did* happen), not a bigger model.
 
 ## Responsible data handling
 

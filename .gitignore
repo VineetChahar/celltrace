@@ -15,3 +15,4 @@ data/rag_index.npz
 .DS_Store
 *.egg-info/
 eval_results/run.log
+eval_results/run_part3.log

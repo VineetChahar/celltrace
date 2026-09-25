@@ -1,20 +1,20 @@
 {
-  "overall_accuracy": 0.2441860465116279,
+  "overall_accuracy": 0.2558139534883721,
   "accuracy_by_fault_type": {
     "AUTH_BAD_KEY": {
       "n": 6,
-      "correct": 2,
-      "accuracy": 0.3333333333333333
+      "correct": 6,
+      "accuracy": 1.0
     },
     "DEREGISTRATION_IMPLICIT": {
       "n": 7,
-      "correct": 2,
-      "accuracy": 0.2857142857142857
+      "correct": 1,
+      "accuracy": 0.14285714285714285
     },
     "HANDOVER_RECONFIG_TIMEOUT": {
       "n": 10,
-      "correct": 0,
-      "accuracy": 0.0
+      "correct": 2,
+      "accuracy": 0.2
     },
     "HO_MISSED_MEASUREMENT": {
       "n": 7,
@@ -28,38 +28,38 @@
     },
     "PHY_SIGNAL_RLF": {
       "n": 8,
-      "correct": 3,
-      "accuracy": 0.375
-    },
-    "REG_TIMEOUT_DROPPED_NAS": {
-      "n": 10,
-      "correct": 1,
-      "accuracy": 0.1
-    },
-    "RRC_CONN_FAIL_CONGESTION": {
-      "n": 10,
-      "correct": 6,
-      "accuracy": 0.6
-    },
-    "SECURITY_MODE_FAILURE": {
-      "n": 8,
       "correct": 2,
       "accuracy": 0.25
     },
+    "REG_TIMEOUT_DROPPED_NAS": {
+      "n": 10,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "RRC_CONN_FAIL_CONGESTION": {
+      "n": 10,
+      "correct": 7,
+      "accuracy": 0.7
+    },
+    "SECURITY_MODE_FAILURE": {
+      "n": 8,
+      "correct": 1,
+      "accuracy": 0.125
+    },
     "SERVICE_REQUEST_NO_CONTEXT": {
       "n": 10,
-      "correct": 5,
-      "accuracy": 0.5
+      "correct": 3,
+      "accuracy": 0.3
     }
   },
-  "hallucination_rate": 0.7558139534883721,
+  "hallucination_rate": 0.5813953488372093,
   "tool_use_efficiency": {
-    "avg_tool_calls": 3.8488372093023258,
-    "median_tool_calls": 3,
-    "n_investigations_at_or_below_median": 44,
-    "n_investigations_above_median": 42,
-    "accuracy_at_or_below_median_calls": 0.3409090909090909,
-    "accuracy_above_median_calls": 0.14285714285714285
+    "avg_tool_calls": 1.8255813953488371,
+    "median_tool_calls": 2,
+    "n_investigations_at_or_below_median": 70,
+    "n_investigations_above_median": 16,
+    "accuracy_at_or_below_median_calls": 0.3,
+    "accuracy_above_median_calls": 0.0625
   },
   "n_incidents": 86
 }

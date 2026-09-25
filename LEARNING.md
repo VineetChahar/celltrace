@@ -215,6 +215,133 @@ harness produces a suspiciously extreme number, check whether the harness
 itself is the thing that's wrong before writing the number down as a finding
 about the system it's measuring.
 
+## Diagnose-then-fix pass on the eval numbers
+
+After the first full 86-incident eval (24.4% accuracy, 75.6% citation
+hallucination rate), the instruction was explicit: read the failures before
+changing anything, because "the agent reasons fine but its answer doesn't
+land in a recognizable format" and "the agent genuinely can't do multi-hop
+synthesis" need completely different fixes, and guessing wrong wastes time.
+
+**Part 1 -- reading the failures (no code changes, ~40 min).** Of the 65
+investigations the harness flagged as ungrounded, I read the raw transcripts
+and classified every one:
+
+| category | count | % of 65 |
+|---|---:|---:|
+| Fabricated/misquoted (real tool call made, citation genuinely doesn't match) | 14 | 22% |
+| Answered but never invoked (full correct-looking answer written as prose, `submit_root_cause` never actually called) | 27 | 42% |
+| Incomplete (still mid-investigation when the step budget ran out, no conclusion attempted) | 21 | 32% |
+| True abstention (explicitly said "insufficient evidence") | 1 | 2% |
+| Wrong-layer-label on otherwise-real content (a genuine one-off, not counted above) | 1 | — |
+| Absence-of-evidence description forced into the citation schema (a genuine one-off) | 1 | — |
+
+The two mechanical/format categories (42% + 32% = 74%) dwarfed genuine
+fabrication (22%). Concrete example of "answered but never invoked"
+(`INC_0021`, verbatim from its transcript's last reasoning turn): the model
+had already written out a complete, correct JSON answer --
+`"fault_type": "RRC_CONN_FAIL_CONGESTION"` with two real citations -- as
+prose text, then ended with *"Call the `submit_root_cause` function with the
+provided details"* instead of an actual tool invocation. It had the right
+answer. It just never pressed the button.
+
+I also spot-checked 6 incidents from the three 0%-accuracy fault types
+(`HANDOVER_RECONFIG_TIMEOUT`, `HO_MISSED_MEASUREMENT`, `PAGING_TIMEOUT`) for
+whether the agent even reached the layer where the real evidence lives.
+It did, in every one -- e.g. one `HANDOVER_RECONFIG_TIMEOUT` case checked
+RRC, then NAS, then RRC again, then PHY (all three layers) before still
+failing to conclude. So "stops before checking" wasn't the problem either;
+the same mechanical/format gap was.
+
+One interesting fabrication sub-pattern from the 14 genuine cases: several
+invented timestamps looked like real Unix epoch values
+(`1583930304.021`, `1650034389.568`, `1677538912.345` -- all plausible
+2020s calendar dates) instead of this project's actual simulation-clock
+seconds (small numbers like `2461.72`). The model reached for a
+plausible-*looking* timestamp from its training distribution rather than one
+it had actually seen in a tool result -- a different and more concerning
+failure than a rounding error, and worth knowing the difference between the
+two when reading any hallucination-rate number.
+
+**Part 2 -- fixing the format/completion gap.** Since the failures were
+mostly categories 2+3+4 above (format/completion, not synthesis), I rebuilt
+how the final answer is produced. `submit_root_cause` is no longer a native
+tool call the model has to remember to invoke correctly under pressure;
+evidence-gathering still uses native tool-calling (that part worked fine --
+the model reliably called `get_rrc_window` etc.), but the final answer now
+comes from one dedicated call using Ollama's JSON-schema-constrained
+structured output (`ollama.chat(..., format=<schema>)`), which reliably
+returns parseable JSON instead of hoping a stressed, budget-limited model
+correctly emits a well-formed function call. The schema also adds an
+explicit `insufficient_evidence` boolean, separate from `fault_type`, so a
+genuine "I don't know" is now a valid, honest, machine-checkable answer
+instead of indistinguishable from a wrong guess.
+
+On a 4-incident spot check before committing to a full re-run, this
+immediately flipped two previously-broken cases to correct, including one
+from the 0%-accuracy `HANDOVER_RECONFIG_TIMEOUT` category -- and every
+citation it did produce verified clean (no fabrication) in that sample.
+
+**Before/after, full 86-incident re-run:**
+
+| metric | before | after |
+|---|---:|---:|
+| Overall accuracy | 24.4% | 25.6% |
+| Citation hallucination rate | 75.6% | 58.1% |
+| Avg tool calls / investigation | 3.85 | 1.83 |
+
+Full per-fault-type breakdown is in the README. The honest summary: this
+fixed exactly the thing it targeted (completion reliability -> grounding),
+and I was wrong to assume that would also lift accuracy much, because I
+hadn't accounted for a side effect of the fix's mechanism. The old loop kept
+nudging the model to make another tool call whenever it stopped ("continue
+the investigation or call submit_root_cause"), which -- inadvertently --
+forced more investigation depth as a side effect of chasing a tool call that
+often never landed anyway. The new loop finalizes the moment the model stops
+issuing tool calls, because that pause is now a *reliable* signal ("ready to
+answer") instead of a signal that usually led nowhere. Reliable is good, but
+it also means the agent now finalizes on however much evidence it happened
+to gather in however many calls it felt like making, which is less for
+fault types that only look wrong after several patient checks. Average tool
+calls per investigation fell from 3.85 to 1.83 as a direct result --
+`AUTH_BAD_KEY` (one NAS exchange, quick to resolve) went from 33.3% to
+100.0%, while `SERVICE_REQUEST_NO_CONTEXT` and `REG_TIMEOUT_DROPPED_NAS`
+(both need noticing something *after* a longer gap) lost ground. If I had
+more time, the next experiment I'd run isn't a different model, it's
+requiring at least 2 evidence-gathering calls (not 1) before allowing early
+finalization, to get some of that lost depth back without reintroducing the
+unreliable nudge loop.
+
+**Part 3 (larger local model on the cross-layer gap):**
+
+Same agent code, same prompts, only the model swapped
+(`qwen2.5:7b-instruct` in place of `qwen2.5:3b-instruct`), run against the
+27 incidents from the three fault types still at 0% after Part 2
+(`HO_MISSED_MEASUREMENT`, `PAGING_TIMEOUT`, `REG_TIMEOUT_DROPPED_NAS`):
+**0/27 correct on the 7B model, identical to the 3B model's 0/27 on the same
+subset.** Citation hallucination was also identical: 23/27 (85.2%) for
+*both* models -- not just a similar rate, the same count. The 7B model made
+71% more tool calls on average (3.93 vs 2.30), so it wasn't giving up early
+or being lazier about investigating; it just couldn't turn that extra
+investigation into a correct answer.
+
+This is the useful negative result the instructions asked for if it came out
+this way: model size was not the bottleneck for this task. All three of
+these fault types share a specific structural property -- the diagnostic
+signal is the *absence* of a message that should have appeared (no
+MeasurementReport, no RRCSetupRequest response to a Paging, no second
+RegistrationAccept), not a message that did appear and needs interpreting.
+My tools return "what happened in this window," and the model has to notice,
+unprompted, that something specific *didn't* happen among a list of things
+that did -- and apparently that's genuinely hard for a small-to-mid local
+model regardless of size, at least with this tool design. If I revisited
+this, the experiment I'd try next isn't a bigger model again, it's a
+different tool: something like `check_message_absence(msg_type, t_start,
+t_end)` that directly answers the yes/no question instead of making the
+model infer it from a returned list -- turning "notice an absence" into
+"read a boolean," which is a much easier thing to ask any size of model to
+do.
+
 ## C++ mechanics used and why
 
 - **Move semantics** (`ParsedMessage`, `json::Value`): both are move-only by

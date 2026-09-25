@@ -1,0 +1,272 @@
+[
+  {
+    "incident_id": "INC_0071",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 4,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 56.23373603820801
+  },
+  {
+    "incident_id": "INC_0074",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 34.986652135849
+  },
+  {
+    "incident_id": "INC_0032",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "PAGING_TIMEOUT",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": false,
+    "insufficient_evidence": false,
+    "elapsed_s": 44.16805815696716
+  },
+  {
+    "incident_id": "INC_0012",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "OTHER",
+    "correct": false,
+    "n_tool_calls": 8,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": true,
+    "elapsed_s": 97.29289889335632
+  },
+  {
+    "incident_id": "INC_0008",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "SECURITY_MODE_FAILURE",
+    "correct": false,
+    "n_tool_calls": 4,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 51.94788599014282
+  },
+  {
+    "incident_id": "INC_0027",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "RRC_CONN_FAIL_CONGESTION",
+    "correct": false,
+    "n_tool_calls": 2,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 42.01139283180237
+  },
+  {
+    "incident_id": "INC_0031",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "HANDOVER_RECONFIG_TIMEOUT",
+    "correct": false,
+    "n_tool_calls": 4,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 39.433537006378174
+  },
+  {
+    "incident_id": "INC_0077",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 45.50176191329956
+  },
+  {
+    "incident_id": "INC_0075",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 43.020577907562256
+  },
+  {
+    "incident_id": "INC_0028",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 2,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 45.08215808868408
+  },
+  {
+    "incident_id": "INC_0079",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "SERVICE_REQUEST_NO_CONTEXT",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 43.847535133361816
+  },
+  {
+    "incident_id": "INC_0010",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 7,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 66.89213585853577
+  },
+  {
+    "incident_id": "INC_0014",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "OTHER",
+    "correct": false,
+    "n_tool_calls": 6,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": true,
+    "elapsed_s": 67.58604884147644
+  },
+  {
+    "incident_id": "INC_0073",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 46.57577300071716
+  },
+  {
+    "incident_id": "INC_0009",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 6,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 56.365033864974976
+  },
+  {
+    "incident_id": "INC_0070",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": false,
+    "insufficient_evidence": false,
+    "elapsed_s": 39.33318591117859
+  },
+  {
+    "incident_id": "INC_0016",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "OTHER",
+    "correct": false,
+    "n_tool_calls": 6,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": true,
+    "elapsed_s": 69.22714281082153
+  },
+  {
+    "incident_id": "INC_0076",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 2,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 41.28478121757507
+  },
+  {
+    "incident_id": "INC_0007",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "RRC_CONN_FAIL_CONGESTION",
+    "correct": false,
+    "n_tool_calls": 0,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 14.69699501991272
+  },
+  {
+    "incident_id": "INC_0078",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 5,
+    "any_fabricated_citation": false,
+    "insufficient_evidence": false,
+    "elapsed_s": 49.51775288581848
+  },
+  {
+    "incident_id": "INC_0011",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "OTHER",
+    "correct": false,
+    "n_tool_calls": 4,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": true,
+    "elapsed_s": 45.70588707923889
+  },
+  {
+    "incident_id": "INC_0013",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "RRC_CONN_FAIL_CONGESTION",
+    "correct": false,
+    "n_tool_calls": 6,
+    "any_fabricated_citation": false,
+    "insufficient_evidence": false,
+    "elapsed_s": 62.50279402732849
+  },
+  {
+    "incident_id": "INC_0030",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "HANDOVER_RECONFIG_TIMEOUT",
+    "correct": false,
+    "n_tool_calls": 6,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 49.374276876449585
+  },
+  {
+    "incident_id": "INC_0072",
+    "true_fault_type": "PAGING_TIMEOUT",
+    "predicted_fault_type": "SECURITY_MODE_FAILURE",
+    "correct": false,
+    "n_tool_calls": 3,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 43.5253472328186
+  },
+  {
+    "incident_id": "INC_0015",
+    "true_fault_type": "REG_TIMEOUT_DROPPED_NAS",
+    "predicted_fault_type": "OTHER",
+    "correct": false,
+    "n_tool_calls": 6,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": true,
+    "elapsed_s": 69.7561662197113
+  },
+  {
+    "incident_id": "INC_0029",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 2,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 47.01129412651062
+  },
+  {
+    "incident_id": "INC_0033",
+    "true_fault_type": "HO_MISSED_MEASUREMENT",
+    "predicted_fault_type": "PHY_SIGNAL_RLF",
+    "correct": false,
+    "n_tool_calls": 2,
+    "any_fabricated_citation": true,
+    "insufficient_evidence": false,
+    "elapsed_s": 32.48375082015991
+  }
+]
