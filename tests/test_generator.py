@@ -55,3 +55,18 @@ def test_logs_are_globally_sorted_by_timestamp(generated):
             ts = json.loads(line)["ts"]
             assert ts >= prev
             prev = ts
+
+
+def test_no_internal_simulator_fields_leak_into_logs(generated):
+    """Regression guard for a real bug: a fault builder once returned
+    {"_sim_valid": False} as a message field, which went straight into the
+    persisted log and handed the agent the ground-truth label for
+    AUTH_BAD_KEY instead of making it infer the fault from AuthenticationReject.
+    Any internal/simulator-only field must use a leading underscore and must
+    never reach the serialized `fields` dict."""
+    out_dir, _ = generated
+    for name in ["rrc.jsonl", "nas.jsonl", "phy.jsonl"]:
+        for line in (out_dir / "logs" / name).open():
+            row = json.loads(line)
+            for key in row["fields"]:
+                assert not key.startswith("_"), f"leaked internal field {key!r} in {name}"

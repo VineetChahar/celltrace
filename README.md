@@ -12,19 +12,25 @@ logins, no real subscriber data anywhere.
 
 ## Network-stack decision
 
-This build uses a **hand-written, protocol-accurate log synthesizer**, not a
-live UERANSIM+Open5GS deployment. **No log in this repository comes from a live
-network -- every timestamp, message, and signal-quality value is synthetic.**
+This build uses a **hand-written log synthesizer modeled on real 3GPP message
+flows**, not a live UERANSIM+Open5GS deployment. **No log in this repository
+comes from a live network -- every timestamp, message, and signal-quality
+value is synthetic.**
 
 This was a deliberate call, made explicit before writing any code: Open5GS's
 ~10-microservice 5G core plus UERANSIM's UE/gNB simulator need a TUN device and
 `NET_ADMIN` inside Docker, are historically flaky on macOS Docker Desktop, and
 risked burning an entire build session on container networking before any of
 the actual point of this project -- the C++ parser, the agent, the eval harness
--- got built. The synthesizer is cross-checked message-by-message against the
-public 3GPP specs **38.331** (5G NR RRC) and **24.501** (5G NAS): every field
-name in every message is the real information-element name from those specs.
-Full schema and fault-type-to-mechanism mapping is in [DESIGN.md](DESIGN.md).
+-- got built. The synthesizer's message sequences and field naming are modeled
+on the public 3GPP specs **38.331** (5G NR RRC) and **24.501** (5G NAS), but
+this was **not verified character-for-character against the spec text** --
+it's known to mix in some LTE 36.331 terminology (e.g. `mobilityControlInfo`,
+which NR calls `reconfigurationWithSync`) and some illustrative cause values
+that aren't verified literal spec enumerations. Treat every message/field name
+here as spec-*flavored*, not a verbatim spec citation. Full schema, the
+caveat in full, and the fault-type-to-mechanism mapping are in
+[DESIGN.md](DESIGN.md).
 
 ## Fault types
 
@@ -191,6 +197,16 @@ behind:
 | HO_MISSED_MEASUREMENT | 7 | 0 | 0.0% |
 | PAGING_TIMEOUT | 10 | 0 | 0.0% |
 | REG_TIMEOUT_DROPPED_NAS | 10 | 0 | 0.0% |
+
+**A note on `AUTH_BAD_KEY`'s 100%, since it's the number most likely to draw a raised
+eyebrow**: an external review correctly flagged that the synthesizer originally leaked a
+`_sim_valid` ground-truth field straight into the `AuthenticationResponse` log line the
+agent reads -- a real bug, now fixed (field removed, regression test added; full story in
+LEARNING.md). Re-running all 6 `AUTH_BAD_KEY` incidents against the leak-free dataset:
+**still 6/6 correct**, now confirmed via the real `AuthenticationReject`/`RRCRelease`
+signal instead of the leaked field. The number didn't move, but that's a fact about this
+fault type's redundancy, not a retroactive excuse for having shipped the leak -- it's
+reported here rather than quietly fixed and left unmentioned.
 
 The split is still not random, though the pattern shifted after the fix (see
 below for why). **The agent is now excellent on fault types resolved from a

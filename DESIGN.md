@@ -2,16 +2,21 @@
 
 ## Network-stack decision (stated plainly, per spec requirement)
 
-This build uses the **hand-written protocol-accurate synthesizer fallback**, not a live
+This build uses the **hand-written, spec-modeled synthesizer fallback**, not a live
 UERANSIM+Open5GS deployment. Reasoning was made explicit with the user before starting:
 Open5GS's ~10-microservice 5GC plus UERANSIM's UE/gNB simulator require a TUN device and
 `NET_ADMIN` capability inside Docker, are historically flaky on macOS Docker Desktop, and
 risk burning an entire session on container networking before any of the C++ parsing,
 agent, or eval work (the actual point of this project) gets built. The synthesizer is
-cross-checked field-for-field against the publicly downloadable 3GPP specs:
-**38.331** (5G NR RRC) and **24.501** (5G NAS). **No log in this repository comes from a
-live network. Every timestamp, message, and signal-quality value is synthetic.** This is
-stated again in the README.
+**modeled on** the publicly downloadable 3GPP specs **38.331** (5G NR RRC) and **24.501**
+(5G NAS) — message sequences and IE naming follow those specs' general shape, but this was
+not verified character-for-character against the spec text, and it is known to mix in some
+LTE (36.331) terminology (e.g. `mobilityControlInfo` is an LTE IE name; NR uses
+`reconfigurationWithSync`) and some invented/illustrative cause values that are not
+verified literal spec enumerations. Treat every field/cause name here as "simplified and
+in the spirit of the real spec," not as a verbatim spec citation. **No log in this
+repository comes from a live network. Every timestamp, message, and signal-quality value
+is synthetic.** This is stated again in the README.
 
 ## Shared contract (pins all four components together)
 
@@ -42,10 +47,11 @@ Every line, regardless of layer, has this envelope:
 }
 ```
 
-`fields` content is defined per `msg_type` in `synthesizer/messages_5g.py` — every field
-name is the real 3GPP information-element name (e.g. `rrc-TransactionIdentifier`,
+`fields` content is defined per `msg_type` in `synthesizer/messages_5g.py` — field names
+are modeled on real 3GPP information-element names (e.g. `rrc-TransactionIdentifier`,
 `establishmentCause`, `5gsRegistrationType`, `ngKSI`) so the C++ parser and the LLM agent
-are both reading spec-accurate structures, not made-up JSON keys.
+are both reading spec-*flavored* structures rather than arbitrary made-up JSON keys — but
+see the caveat above, this is not a verified, character-for-character spec reproduction.
 
 PHY `fields` = `{"rsrp_dbm": float, "rsrq_db": float, "sinr_db": float}`.
 
@@ -106,9 +112,9 @@ what needed anonymizing.
 ### C++ <-> Python bridge
 
 pybind11 native extension (`celltrace_parser`), not a socket. The C++ side owns a
-mutex-protected ring buffer that a producer thread fills by tailing the three `.jsonl`
-files (simulating a live stream); parsed, typed events are appended to
-per-layer indexed stores. Python calls into the same process:
+lock-free SPSC ring buffer (atomics, cache-line-padded head/tail) that a producer thread
+fills by tailing the three `.jsonl` files (simulating a live stream); parsed, typed events
+are appended to per-layer indexed stores. Python calls into the same process:
 
 ```python
 import celltrace_parser as ctp
@@ -127,16 +133,18 @@ under concurrent producer load) and reported in the README.
 1. `get_rrc_window(session_id, t_start, t_end)`
 2. `get_nas_window(session_id, t_start, t_end)`
 3. `get_phy_window(session_id, t_start, t_end)`
-4. `rag_lookup(query_text, k=3)` — brute-force cosine search over the 30-entry
+4. `rag_lookup(query_text, k=3)` — brute-force cosine search over the 25-entry
    hand-written failure-pattern corpus, embedded with `all-MiniLM-L6-v2`
 
 All four are backed by the same `LogStore` instance built once at agent startup.
 
 ### Citation grounding
 
-The agent's final answer must include verbatim-quoted log lines with `layer` + `ts`. The
-eval harness's citation verifier re-queries the exact same `LogStore` for that
-`(layer, ts, session_id)` and does an exact-field diff against what the agent claimed —
+The agent's final answer must include cited log lines with `layer` + `ts`. The eval
+harness's citation verifier re-queries the exact same `LogStore` for that
+`(layer, ts, session_id)` and checks the quote semantically against the real message
+(verbatim substring, OR real `msg_type`, OR field values/numbers within rounding
+tolerance — the agent is allowed to quote a value in prose, not just exact JSON syntax) —
 this is the same `LogStore`/parser the agent used, not a re-implementation, so a
 "hallucination" here means the agent's own tool output was misquoted, not a parser
 discrepancy.

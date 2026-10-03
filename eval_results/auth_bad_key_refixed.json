@@ -1,0 +1,38 @@
+[
+  {
+    "incident_id": "INC_0006",
+    "correct": true,
+    "fab": false,
+    "pred": "AUTH_BAD_KEY"
+  },
+  {
+    "incident_id": "INC_0005",
+    "correct": true,
+    "fab": false,
+    "pred": "AUTH_BAD_KEY"
+  },
+  {
+    "incident_id": "INC_0002",
+    "correct": true,
+    "fab": true,
+    "pred": "AUTH_BAD_KEY"
+  },
+  {
+    "incident_id": "INC_0004",
+    "correct": true,
+    "fab": false,
+    "pred": "AUTH_BAD_KEY"
+  },
+  {
+    "incident_id": "INC_0003",
+    "correct": true,
+    "fab": false,
+    "pred": "AUTH_BAD_KEY"
+  },
+  {
+    "incident_id": "INC_0001",
+    "correct": true,
+    "fab": false,
+    "pred": "AUTH_BAD_KEY"
+  }
+]

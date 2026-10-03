@@ -89,8 +89,13 @@ def authentication_request(ng_ksi: int) -> dict:
 
 
 def authentication_response(valid: bool) -> dict:
+    """`valid` only controls the caller's subsequent message (AuthenticationReject
+    vs SecurityModeCommand) -- it must never appear in the returned fields. A real
+    observer can't tell a correct RES* from a wrong one just by looking at it; the
+    only real signal is what the network does next. Leaking it here would hand the
+    agent the ground-truth label instead of making it infer the fault."""
     res = random.getrandbits(64).to_bytes(8, "big").hex()
-    return {"authParamRES": res, "_sim_valid": valid}
+    return {"authParamRES": res}
 
 
 def authentication_reject(cause: str = "MAC-failure") -> dict:

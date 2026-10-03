@@ -342,6 +342,49 @@ model infer it from a returned list -- turning "notice an absence" into
 "read a boolean," which is a much easier thing to ask any size of model to
 do.
 
+## A third real bug (caught by external review, not self-found): a ground-truth label leak
+
+An external review of the published numbers flagged that `AUTH_BAD_KEY`'s 100% accuracy
+looked suspicious and asked whether the agent could be reading the answer directly instead
+of inferring it. Checking `synthesizer/messages_5g.py`, the concern was exactly right:
+`authentication_response(valid: bool)` returned `{"authParamRES": res, "_sim_valid": valid}`
+-- that `_sim_valid` field went straight into the persisted `AuthenticationResponse` log
+line, which the agent's `get_nas_window()` tool hands to the LLM verbatim. Checking the
+data confirmed it was a perfect, deterministic leak: exactly 6 lines in the whole dataset
+had `_sim_valid: false`, and they were exactly the 6 `AUTH_BAD_KEY` incidents. Worse, it
+wasn't just theoretically readable -- checking the official published transcripts showed
+the agent had **actually quoted `_sim_valid: false` verbatim as cited evidence** in 2 of
+the 6 investigations (`INC_0005`, `INC_0001`).
+
+**Fix**: removed the field entirely (`authentication_response` now returns only
+`{"authParamRES": res}` -- the `valid` parameter still controls which message the *caller*
+emits next, AuthenticationReject vs SecurityModeCommand, it just no longer leaks into the
+observable log). This is also the protocol-accurate behavior: a real observer can't tell a
+correct RES* from a wrong one by looking at it, only the network can by comparing against
+XRES* -- the only real signal is what happens *next*. Added a regression test
+(`test_no_internal_simulator_fields_leak_into_logs`) asserting no `fields` key anywhere in
+any generated log line starts with `_`, so this class of bug can't silently reappear.
+
+**The honest result after fixing it: accuracy did not change.** Re-ran all 6 `AUTH_BAD_KEY`
+incidents against the leak-free dataset -- still 6/6 correct. Inspecting the new citations
+confirmed why: the fault type has a second, completely legitimate signal that doesn't
+depend on the leaked field at all -- the real `AuthenticationReject` message (cause
+`MAC-failure`) and/or the subsequent `RRCRelease` (cause `nas-failure`), both of which only
+ever appear in this fault type regardless of the leaked field. The agent had apparently
+been getting a boost from the leak when it reached for it, but the fault type was easy
+enough from real evidence alone that removing the leak didn't cost it anything measurable
+on this small a sample (n=6).
+
+**Why this is still worth taking seriously even though the number didn't move**: a leak
+like this is a construct-validity problem, not a results problem -- "the number happened to
+come out the same" is a fact about this particular fault type's redundancy, not a defense
+of having shipped a leaky field in the first place. If `AUTH_BAD_KEY` *hadn't* had an
+independent real signal, the 100% would have been entirely fake and I wouldn't have known
+without someone else looking for exactly this. The actual lesson: **audit every field a
+fault-injection function emits for whether it could only exist because the generator
+already knows the answer**, not just whether the final accuracy number looks plausible --
+a correct-looking number is not evidence of an uncompromised measurement.
+
 ## C++ mechanics used and why
 
 - **Move semantics** (`ParsedMessage`, `json::Value`): both are move-only by
