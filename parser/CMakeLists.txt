@@ -26,6 +26,11 @@ add_library(celltrace_core STATIC
 target_include_directories(celltrace_core PUBLIC include)
 find_package(Threads REQUIRED)
 target_link_libraries(celltrace_core PUBLIC Threads::Threads)
+# celltrace_core gets linked into the pybind11 shared module below, so its
+# object code must be position-independent -- GCC/Linux enforces this (link
+# fails with "recompile with -fPIC"); Clang/macOS happens not to, which is
+# why this wasn't caught locally before CI ran on Linux.
+set_target_properties(celltrace_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # --- pybind11 extension module -----------------------------------------------
 FetchContent_Declare(
