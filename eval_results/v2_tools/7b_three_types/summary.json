@@ -1,0 +1,30 @@
+{
+  "overall_accuracy": 0.037037037037037035,
+  "accuracy_by_fault_type": {
+    "HO_MISSED_MEASUREMENT": {
+      "n": 7,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "PAGING_TIMEOUT": {
+      "n": 10,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "REG_TIMEOUT_DROPPED_NAS": {
+      "n": 10,
+      "correct": 1,
+      "accuracy": 0.1
+    }
+  },
+  "hallucination_rate": 0.7777777777777778,
+  "tool_use_efficiency": {
+    "avg_tool_calls": 4.074074074074074,
+    "median_tool_calls": 3,
+    "n_investigations_at_or_below_median": 14,
+    "n_investigations_above_median": 13,
+    "accuracy_at_or_below_median_calls": 0.0,
+    "accuracy_above_median_calls": 0.07692307692307693
+  },
+  "n_incidents": 27
+}

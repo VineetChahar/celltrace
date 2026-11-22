@@ -1,0 +1,53 @@
+.venv/bin/python -m eval.run_eval --agent v2 --model qwen2.5:7b-instruct --data-dir data \
+		--fault-types HO_MISSED_MEASUREMENT,PAGING_TIMEOUT,REG_TIMEOUT_DROPPED_NAS \
+		--out-dir eval_results/v2_tools/7b_three_types
+config: {"agent": "v2", "model": "qwen2.5:7b-instruct", "data_dir": "data", "fault_types": "HO_MISSED_MEASUREMENT,PAGING_TIMEOUT,REG_TIMEOUT_DROPPED_NAS", "n_incidents": 27, "gen_options": {"num_predict": 400}, "max_steps": 10, "git_sha_at_start": "49dd5e8"}
+[  1/27] INC_0071 PAGING_TIMEOUT               -> OTHER                        WRONG tools=6 fab=True (89.0s)
+[  2/27] INC_0074 PAGING_TIMEOUT               -> PHY_SIGNAL_RLF               WRONG tools=2 fab=True (80.6s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Python(83589) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 2860.01it/s]
+[  3/27] INC_0032 HO_MISSED_MEASUREMENT        -> PAGING_TIMEOUT               WRONG tools=6 fab=False (140.4s)
+[  4/27] INC_0012 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=4 fab=True (89.6s)
+[  5/27] INC_0008 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=4 fab=True (88.5s)
+[  6/27] INC_0027 HO_MISSED_MEASUREMENT        -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=3 fab=True (86.0s)
+[  7/27] INC_0031 HO_MISSED_MEASUREMENT        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=0 fab=True (33.4s)
+[  8/27] INC_0077 PAGING_TIMEOUT               -> PHY_SIGNAL_RLF               WRONG tools=3 fab=False (77.7s)
+[  9/27] INC_0075 PAGING_TIMEOUT               -> SECURITY_MODE_FAILURE        WRONG tools=3 fab=False (85.4s)
+[ 10/27] INC_0028 HO_MISSED_MEASUREMENT        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=True (57.9s)
+[ 11/27] INC_0079 PAGING_TIMEOUT               -> HANDOVER_RECONFIG_TIMEOUT    WRONG tools=3 fab=True (72.4s)
+[ 12/27] INC_0010 REG_TIMEOUT_DROPPED_NAS      -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (66.3s)
+[ 13/27] INC_0014 REG_TIMEOUT_DROPPED_NAS      -> DEREGISTRATION_IMPLICIT      WRONG tools=3 fab=True (106.8s)
+[ 14/27] INC_0073 PAGING_TIMEOUT               -> OTHER                        WRONG tools=4 fab=True (64.2s)
+[ 15/27] INC_0009 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=5 fab=True (112.3s)
+[ 16/27] INC_0070 PAGING_TIMEOUT               -> PHY_SIGNAL_RLF               WRONG tools=3 fab=True (63.1s)
+[ 17/27] INC_0016 REG_TIMEOUT_DROPPED_NAS      -> PHY_SIGNAL_RLF               WRONG tools=5 fab=True (96.7s)
+[ 18/27] INC_0076 PAGING_TIMEOUT               -> PHY_SIGNAL_RLF               WRONG tools=3 fab=False (59.6s)
+[ 19/27] INC_0007 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=9 fab=True (104.9s)
+[ 20/27] INC_0078 PAGING_TIMEOUT               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=10 fab=True (83.2s)
+[ 21/27] INC_0011 REG_TIMEOUT_DROPPED_NAS      -> REG_TIMEOUT_DROPPED_NAS      OK    tools=4 fab=True (103.2s)
+[ 22/27] INC_0013 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=5 fab=True (143.2s)
+[ 23/27] INC_0030 HO_MISSED_MEASUREMENT        -> SECURITY_MODE_FAILURE        WRONG tools=5 fab=True (60.1s)
+[ 24/27] INC_0072 PAGING_TIMEOUT               -> SECURITY_MODE_FAILURE        WRONG tools=3 fab=True (69.9s)
+[ 25/27] INC_0015 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=5 fab=True (131.4s)
+[ 26/27] INC_0029 HO_MISSED_MEASUREMENT        -> PHY_SIGNAL_RLF               WRONG tools=3 fab=False (69.8s)
+[ 27/27] INC_0033 HO_MISSED_MEASUREMENT        -> PHY_SIGNAL_RLF               WRONG tools=3 fab=True (67.4s)
+
+=== Root-cause accuracy: 3.7% overall (27 incidents) ===
+fault_type                          n  correct   accuracy
+HO_MISSED_MEASUREMENT               7        0      0.0%
+PAGING_TIMEOUT                     10        0      0.0%
+REG_TIMEOUT_DROPPED_NAS            10        1     10.0%
+
+=== Citation grounding ===
+hallucination rate (>=1 fabricated/misquoted citation): 77.8%
+
+=== Tool-use efficiency ===
+avg_tool_calls: 4.074074074074074
+median_tool_calls: 3
+n_investigations_at_or_below_median: 14
+n_investigations_above_median: 13
+accuracy_at_or_below_median_calls: 0.0
+accuracy_above_median_calls: 0.07692307692307693
+
+Chart saved to eval_results/v2_tools/7b_three_types/tool_calls_vs_accuracy.png

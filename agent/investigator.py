@@ -20,7 +20,7 @@ import time
 
 import ollama
 
-from agent.tools import TOOL_SCHEMAS, InvestigationTools
+from agent.tools import ABSENCE_TOOL_SCHEMAS, TOOL_SCHEMAS, InvestigationTools
 from synthesizer.faults import FAULT_TYPES
 
 MODEL = "qwen2.5:3b-instruct"
@@ -80,6 +80,47 @@ tools). Only cite a log line you actually saw in a tool's result -- never
 invent a timestamp or a field value.
 """
 
+# v2 = v1's prompt with the tool list extended and one paragraph on absence
+# evidence. It deliberately names no fault type and no expected answer (the
+# repo already shipped one label leak -- see git log 49dd5e8): it describes a
+# KIND of evidence (something that should have happened and didn't, a silence
+# as long as a timer), not which fault that evidence points to.
+# tests/test_absence_tools.py fails if any fault-type name appears here.
+SYSTEM_PROMPT_V2 = """\
+You are a cellular network root-cause investigator. You are handed a reported
+incident (a session id, a rough timestamp, and a one-line symptom) for a real
+5G network session. You must determine which specific fault type caused it.
+
+You have seven tools. get_rrc_window, get_nas_window, get_phy_window each
+return real log messages for THIS session in a time window you choose;
+rag_lookup searches known failure-pattern documentation for a query you
+write. Start with a window of a few seconds before to a few seconds after
+the reported timestamp, then WIDEN or narrow it, and move to a DIFFERENT
+layer, based on what you actually see. Don't call all tools in a fixed
+order out of habit; let the evidence decide what you check next.
+
+Some failures leave no error message at all: the evidence is a message that
+should have appeared and never did, or a silence whose length matches a
+3GPP protocol timer. A list of what DID happen won't show that on its own.
+Whenever you see a request, command or page with no visible answer, a
+message that is repeated, or a layer that goes quiet before the session
+ends, check it explicitly with the other three tools:
+- find_missing_response: was the expected answer to a message ever logged?
+- gap_vs_timer: does the gap between two messages (or the silence after
+  one) match a protocol timer expiring?
+- last_event_before: what was the last thing a layer logged before a time,
+  and how long before?
+
+Investigate using the tools until you have enough evidence, then say so in
+plain text (you'll be asked to formalize your answer once you stop calling
+tools). Only cite a log line you actually saw in a tool's result -- never
+invent a timestamp or a field value. The absence/timing tools return a
+line_id, layer and ts for every message they mention; cite those like any
+other log line. An absence can't be quoted itself: cite the message that
+went unanswered and the messages around the gap.
+"""
+
+
 FINAL_PROMPT = """\
 Based on everything above, give your final structured answer now.
 
@@ -119,30 +160,53 @@ def _structured_final_answer(model: str, messages: list) -> dict:
     return parsed
 
 
-def investigate(session_id: str, reported_ts: float, symptom: str, tools: InvestigationTools,
-                 model: str = MODEL, max_steps: int = MAX_STEPS) -> dict:
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": (
-            f"Incident report:\nsession_id: {session_id}\n"
-            f"reported_ts: {reported_ts}\nsymptom: \"{symptom}\"\n\n"
-            f"A reasonable first window to check is roughly {reported_ts - 15:.1f} to {reported_ts + 5:.1f}."
-        )},
-    ]
-    trace = {"session_id": session_id, "reported_ts": reported_ts, "symptom": symptom, "steps": []}
+def _toolset_config(toolset: str, tools: InvestigationTools) -> tuple[str, list, dict]:
+    """(system prompt, native tool schemas, name->callable) for an agent version.
+
+    "v1" is the agent exactly as evaluated before the absence/timing tools
+    existed -- same prompt, same four evidence tools -- kept runnable so the
+    before/after comparison re-runs both under identical settings instead of
+    comparing a fresh run against an old log file.
+    """
     fn_table = {
         "get_rrc_window": tools.get_rrc_window,
         "get_nas_window": tools.get_nas_window,
         "get_phy_window": tools.get_phy_window,
         "rag_lookup": tools.rag_lookup,
     }
+    if toolset == "v1":
+        return SYSTEM_PROMPT, EVIDENCE_TOOL_SCHEMAS, fn_table
+    if toolset == "v2":
+        fn_table = dict(fn_table)
+        fn_table.update({
+            "find_missing_response": tools.find_missing_response,
+            "gap_vs_timer": tools.gap_vs_timer,
+            "last_event_before": tools.last_event_before,
+        })
+        return SYSTEM_PROMPT_V2, EVIDENCE_TOOL_SCHEMAS + ABSENCE_TOOL_SCHEMAS, fn_table
+    raise ValueError(f"unknown toolset {toolset!r}")
+
+
+def investigate(session_id: str, reported_ts: float, symptom: str, tools: InvestigationTools,
+                 model: str = MODEL, max_steps: int = MAX_STEPS, toolset: str = "v2") -> dict:
+    system_prompt, tool_schemas, fn_table = _toolset_config(toolset, tools)
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": (
+            f"Incident report:\nsession_id: {session_id}\n"
+            f"reported_ts: {reported_ts}\nsymptom: \"{symptom}\"\n\n"
+            f"A reasonable first window to check is roughly {reported_ts - 15:.1f} to {reported_ts + 5:.1f}."
+        )},
+    ]
+    trace = {"session_id": session_id, "reported_ts": reported_ts, "symptom": symptom,
+             "toolset": toolset, "model": model, "steps": []}
 
     n_evidence_calls = 0
     used_early_nudge = False
 
     for step in range(max_steps):
         t0 = time.time()
-        resp = ollama.chat(model=model, messages=messages, tools=EVIDENCE_TOOL_SCHEMAS, options=GEN_OPTIONS)
+        resp = ollama.chat(model=model, messages=messages, tools=tool_schemas, options=GEN_OPTIONS)
         latency = time.time() - t0
         msg = resp["message"]
         reasoning = (msg.get("content") or "").strip()

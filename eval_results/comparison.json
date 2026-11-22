@@ -1,0 +1,492 @@
+{
+  "published_original": {
+    "n": 86,
+    "correct": 22,
+    "fabricated": 50,
+    "insufficient_evidence": 20,
+    "final_answer_parse_failures": 20,
+    "truncated_but_fault_type_was_right": 3,
+    "avg_tool_calls": 1.8255813953488371,
+    "total_tool_calls": 157,
+    "investigations_using_a_new_tool": 0,
+    "tool_call_counts": {
+      "get_rrc_window": 93,
+      "get_phy_window": 32,
+      "get_nas_window": 32
+    },
+    "per_type": {
+      "AUTH_BAD_KEY": [
+        6,
+        6
+      ],
+      "DEREGISTRATION_IMPLICIT": [
+        1,
+        7
+      ],
+      "HANDOVER_RECONFIG_TIMEOUT": [
+        2,
+        10
+      ],
+      "HO_MISSED_MEASUREMENT": [
+        0,
+        7
+      ],
+      "PAGING_TIMEOUT": [
+        0,
+        10
+      ],
+      "PHY_SIGNAL_RLF": [
+        2,
+        8
+      ],
+      "REG_TIMEOUT_DROPPED_NAS": [
+        0,
+        10
+      ],
+      "RRC_CONN_FAIL_CONGESTION": [
+        7,
+        10
+      ],
+      "SECURITY_MODE_FAILURE": [
+        1,
+        8
+      ],
+      "SERVICE_REQUEST_NO_CONTEXT": [
+        3,
+        10
+      ]
+    }
+  },
+  "original": {
+    "v1": {
+      "n": 86,
+      "correct": 23,
+      "fabricated": 48,
+      "insufficient_evidence": 25,
+      "final_answer_parse_failures": 19,
+      "truncated_but_fault_type_was_right": 3,
+      "avg_tool_calls": 1.802325581395349,
+      "total_tool_calls": 155,
+      "investigations_using_a_new_tool": 0,
+      "tool_call_counts": {
+        "get_rrc_window": 94,
+        "get_nas_window": 35,
+        "get_phy_window": 24,
+        "rag_lookup": 2
+      },
+      "per_type": {
+        "AUTH_BAD_KEY": [
+          6,
+          6
+        ],
+        "DEREGISTRATION_IMPLICIT": [
+          0,
+          7
+        ],
+        "HANDOVER_RECONFIG_TIMEOUT": [
+          1,
+          10
+        ],
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          1,
+          10
+        ],
+        "PHY_SIGNAL_RLF": [
+          1,
+          8
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          0,
+          10
+        ],
+        "RRC_CONN_FAIL_CONGESTION": [
+          7,
+          10
+        ],
+        "SECURITY_MODE_FAILURE": [
+          3,
+          8
+        ],
+        "SERVICE_REQUEST_NO_CONTEXT": [
+          4,
+          10
+        ]
+      }
+    },
+    "v2": {
+      "n": 86,
+      "correct": 14,
+      "fabricated": 54,
+      "insufficient_evidence": 39,
+      "final_answer_parse_failures": 36,
+      "truncated_but_fault_type_was_right": 14,
+      "avg_tool_calls": 2.8255813953488373,
+      "total_tool_calls": 243,
+      "investigations_using_a_new_tool": 53,
+      "tool_call_counts": {
+        "get_rrc_window": 112,
+        "get_nas_window": 34,
+        "find_missing_response": 53,
+        "gap_vs_timer": 17,
+        "last_event_before": 16,
+        "get_phy_window": 9,
+        "rag_lookup": 2
+      },
+      "per_type": {
+        "AUTH_BAD_KEY": [
+          3,
+          6
+        ],
+        "DEREGISTRATION_IMPLICIT": [
+          3,
+          7
+        ],
+        "HANDOVER_RECONFIG_TIMEOUT": [
+          0,
+          10
+        ],
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          1,
+          10
+        ],
+        "PHY_SIGNAL_RLF": [
+          0,
+          8
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          2,
+          10
+        ],
+        "RRC_CONN_FAIL_CONGESTION": [
+          4,
+          10
+        ],
+        "SECURITY_MODE_FAILURE": [
+          1,
+          8
+        ],
+        "SERVICE_REQUEST_NO_CONTEXT": [
+          0,
+          10
+        ]
+      }
+    },
+    "mcnemar_all": {
+      "n_paired": 86,
+      "old_right_new_wrong": 16,
+      "old_wrong_new_right": 7,
+      "exact_two_sided_p": 0.0931396484375
+    },
+    "v1_three": {
+      "n": 27,
+      "correct": 1,
+      "fabricated": 17,
+      "insufficient_evidence": 4,
+      "final_answer_parse_failures": 2,
+      "truncated_but_fault_type_was_right": 0,
+      "avg_tool_calls": 2.0,
+      "total_tool_calls": 54,
+      "investigations_using_a_new_tool": 0,
+      "tool_call_counts": {
+        "get_rrc_window": 30,
+        "get_nas_window": 15,
+        "get_phy_window": 9
+      },
+      "per_type": {
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          1,
+          10
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          0,
+          10
+        ]
+      }
+    },
+    "v2_three": {
+      "n": 27,
+      "correct": 3,
+      "fabricated": 23,
+      "insufficient_evidence": 15,
+      "final_answer_parse_failures": 13,
+      "truncated_but_fault_type_was_right": 3,
+      "avg_tool_calls": 2.7777777777777777,
+      "total_tool_calls": 75,
+      "investigations_using_a_new_tool": 13,
+      "tool_call_counts": {
+        "get_rrc_window": 39,
+        "get_nas_window": 14,
+        "find_missing_response": 15,
+        "gap_vs_timer": 2,
+        "get_phy_window": 3,
+        "rag_lookup": 1,
+        "last_event_before": 1
+      },
+      "per_type": {
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          1,
+          10
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          2,
+          10
+        ]
+      }
+    },
+    "mcnemar_three": {
+      "n_paired": 27,
+      "old_right_new_wrong": 1,
+      "old_wrong_new_right": 3,
+      "exact_two_sided_p": 0.625
+    }
+  },
+  "heldout": {
+    "v1": {
+      "n": 85,
+      "correct": 26,
+      "fabricated": 41,
+      "insufficient_evidence": 16,
+      "final_answer_parse_failures": 14,
+      "truncated_but_fault_type_was_right": 3,
+      "avg_tool_calls": 1.9764705882352942,
+      "total_tool_calls": 168,
+      "investigations_using_a_new_tool": 0,
+      "tool_call_counts": {
+        "get_rrc_window": 96,
+        "get_nas_window": 40,
+        "get_phy_window": 28,
+        "rag_lookup": 4
+      },
+      "per_type": {
+        "AUTH_BAD_KEY": [
+          10,
+          10
+        ],
+        "DEREGISTRATION_IMPLICIT": [
+          2,
+          6
+        ],
+        "HANDOVER_RECONFIG_TIMEOUT": [
+          1,
+          7
+        ],
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          1,
+          10
+        ],
+        "PHY_SIGNAL_RLF": [
+          2,
+          9
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          0,
+          10
+        ],
+        "RRC_CONN_FAIL_CONGESTION": [
+          6,
+          7
+        ],
+        "SECURITY_MODE_FAILURE": [
+          2,
+          10
+        ],
+        "SERVICE_REQUEST_NO_CONTEXT": [
+          2,
+          9
+        ]
+      }
+    },
+    "v2": {
+      "n": 85,
+      "correct": 11,
+      "fabricated": 49,
+      "insufficient_evidence": 32,
+      "final_answer_parse_failures": 32,
+      "truncated_but_fault_type_was_right": 6,
+      "avg_tool_calls": 2.8941176470588235,
+      "total_tool_calls": 246,
+      "investigations_using_a_new_tool": 51,
+      "tool_call_counts": {
+        "get_rrc_window": 112,
+        "last_event_before": 11,
+        "find_missing_response": 55,
+        "gap_vs_timer": 21,
+        "get_nas_window": 33,
+        "get_phy_window": 7,
+        "rag_lookup": 7
+      },
+      "per_type": {
+        "AUTH_BAD_KEY": [
+          3,
+          10
+        ],
+        "DEREGISTRATION_IMPLICIT": [
+          3,
+          6
+        ],
+        "HANDOVER_RECONFIG_TIMEOUT": [
+          0,
+          7
+        ],
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          0,
+          10
+        ],
+        "PHY_SIGNAL_RLF": [
+          0,
+          9
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          0,
+          10
+        ],
+        "RRC_CONN_FAIL_CONGESTION": [
+          4,
+          7
+        ],
+        "SECURITY_MODE_FAILURE": [
+          0,
+          10
+        ],
+        "SERVICE_REQUEST_NO_CONTEXT": [
+          1,
+          9
+        ]
+      }
+    },
+    "mcnemar_all": {
+      "n_paired": 85,
+      "old_right_new_wrong": 18,
+      "old_wrong_new_right": 3,
+      "exact_two_sided_p": 0.0014896392822265625
+    },
+    "v1_three": {
+      "n": 27,
+      "correct": 1,
+      "fabricated": 23,
+      "insufficient_evidence": 7,
+      "final_answer_parse_failures": 6,
+      "truncated_but_fault_type_was_right": 0,
+      "avg_tool_calls": 1.9259259259259258,
+      "total_tool_calls": 52,
+      "investigations_using_a_new_tool": 0,
+      "tool_call_counts": {
+        "get_rrc_window": 32,
+        "get_nas_window": 14,
+        "get_phy_window": 6
+      },
+      "per_type": {
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          1,
+          10
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          0,
+          10
+        ]
+      }
+    },
+    "v2_three": {
+      "n": 27,
+      "correct": 0,
+      "fabricated": 22,
+      "insufficient_evidence": 9,
+      "final_answer_parse_failures": 9,
+      "truncated_but_fault_type_was_right": 2,
+      "avg_tool_calls": 3.2222222222222223,
+      "total_tool_calls": 87,
+      "investigations_using_a_new_tool": 14,
+      "tool_call_counts": {
+        "get_rrc_window": 43,
+        "get_nas_window": 17,
+        "find_missing_response": 16,
+        "last_event_before": 2,
+        "get_phy_window": 3,
+        "rag_lookup": 2,
+        "gap_vs_timer": 4
+      },
+      "per_type": {
+        "HO_MISSED_MEASUREMENT": [
+          0,
+          7
+        ],
+        "PAGING_TIMEOUT": [
+          0,
+          10
+        ],
+        "REG_TIMEOUT_DROPPED_NAS": [
+          0,
+          10
+        ]
+      }
+    },
+    "mcnemar_three": {
+      "n_paired": 27,
+      "old_right_new_wrong": 1,
+      "old_wrong_new_right": 0,
+      "exact_two_sided_p": 1.0
+    }
+  },
+  "7b_three_types": {
+    "n": 27,
+    "correct": 1,
+    "fabricated": 21,
+    "insufficient_evidence": 8,
+    "final_answer_parse_failures": 8,
+    "truncated_but_fault_type_was_right": 1,
+    "avg_tool_calls": 4.074074074074074,
+    "total_tool_calls": 110,
+    "investigations_using_a_new_tool": 14,
+    "tool_call_counts": {
+      "get_rrc_window": 30,
+      "get_nas_window": 27,
+      "get_phy_window": 18,
+      "find_missing_response": 13,
+      "gap_vs_timer": 10,
+      "last_event_before": 2,
+      "rag_lookup": 10
+    },
+    "per_type": {
+      "HO_MISSED_MEASUREMENT": [
+        0,
+        7
+      ],
+      "PAGING_TIMEOUT": [
+        0,
+        10
+      ],
+      "REG_TIMEOUT_DROPPED_NAS": [
+        1,
+        10
+      ]
+    }
+  }
+}

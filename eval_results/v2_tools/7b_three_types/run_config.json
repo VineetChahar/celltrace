@@ -1,0 +1,12 @@
+{
+  "agent": "v2",
+  "model": "qwen2.5:7b-instruct",
+  "data_dir": "data",
+  "fault_types": "HO_MISSED_MEASUREMENT,PAGING_TIMEOUT,REG_TIMEOUT_DROPPED_NAS",
+  "n_incidents": 27,
+  "gen_options": {
+    "num_predict": 400
+  },
+  "max_steps": 10,
+  "git_sha_at_start": "49dd5e8"
+}

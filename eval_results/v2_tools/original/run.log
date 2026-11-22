@@ -1,0 +1,116 @@
+.venv/bin/python -m eval.run_eval --agent v2 --data-dir data --out-dir eval_results/v2_tools/original
+config: {"agent": "v2", "model": "qwen2.5:3b-instruct", "data_dir": "data", "fault_types": "all", "n_incidents": 86, "gen_options": {"num_predict": 400}, "max_steps": 10, "git_sha_at_start": "49dd5e8"}
+[  1/86] INC_0071 PAGING_TIMEOUT               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (11.4s)
+[  2/86] INC_0074 PAGING_TIMEOUT               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (10.3s)
+[  3/86] INC_0052 SECURITY_MODE_FAILURE        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (31.2s)
+[  4/86] INC_0035 HANDOVER_RECONFIG_TIMEOUT    -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (28.9s)
+[  5/86] INC_0036 HANDOVER_RECONFIG_TIMEOUT    -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (29.1s)
+[  6/86] INC_0048 PHY_SIGNAL_RLF               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (26.3s)
+[  7/86] INC_0021 RRC_CONN_FAIL_CONGESTION     -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=3 fab=True (26.1s)
+[  8/86] INC_0032 HO_MISSED_MEASUREMENT        -> OTHER                        WRONG tools=2 fab=True (19.7s)
+[  9/86] INC_0055 SECURITY_MODE_FAILURE        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=True (17.5s)
+[ 10/86] INC_0022 RRC_CONN_FAIL_CONGESTION     -> RRC_CONN_FAIL_CONGESTION     OK    tools=3 fab=False (27.2s)
+[ 11/86] INC_0049 PHY_SIGNAL_RLF               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=8 fab=True (38.9s)
+[ 12/86] INC_0053 SECURITY_MODE_FAILURE        -> SECURITY_MODE_FAILURE        OK    tools=5 fab=False (37.8s)
+[ 13/86] INC_0012 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=3 fab=True (22.0s)
+[ 14/86] INC_0084 DEREGISTRATION_IMPLICIT      -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=6 fab=True (28.8s)
+[ 15/86] INC_0061 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (23.1s)
+[ 16/86] INC_0008 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=5 fab=True (29.5s)
+[ 17/86] INC_0027 HO_MISSED_MEASUREMENT        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=1 fab=True (10.1s)
+[ 18/86] INC_0006 AUTH_BAD_KEY                 -> AUTH_BAD_KEY                 OK    tools=2 fab=False (24.9s)
+[ 19/86] INC_0031 HO_MISSED_MEASUREMENT        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=4 fab=False (31.2s)
+[ 20/86] INC_0005 AUTH_BAD_KEY                 -> OTHER                        WRONG tools=3 fab=True (29.1s)
+[ 21/86] INC_0077 PAGING_TIMEOUT               -> OTHER                        WRONG tools=3 fab=True (20.6s)
+[ 22/86] INC_0068 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (34.8s)
+[ 23/86] INC_0020 RRC_CONN_FAIL_CONGESTION     -> OTHER                        WRONG tools=2 fab=True (23.0s)
+[ 24/86] INC_0075 PAGING_TIMEOUT               -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=4 fab=True (27.6s)
+[ 25/86] INC_0040 HANDOVER_RECONFIG_TIMEOUT    -> OTHER                        WRONG tools=2 fab=True (23.4s)
+[ 26/86] INC_0082 DEREGISTRATION_IMPLICIT      -> DEREGISTRATION_IMPLICIT      OK    tools=2 fab=False (10.1s)
+[ 27/86] INC_0017 RRC_CONN_FAIL_CONGESTION     -> OTHER                        WRONG tools=2 fab=True (17.6s)
+[ 28/86] INC_0028 HO_MISSED_MEASUREMENT        -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=2 fab=True (21.1s)
+[ 29/86] INC_0034 HANDOVER_RECONFIG_TIMEOUT    -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (34.9s)
+[ 30/86] INC_0050 PHY_SIGNAL_RLF               -> OTHER                        WRONG tools=2 fab=True (23.6s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 5158.74it/s]
+[ 31/86] INC_0079 PAGING_TIMEOUT               -> OTHER                        WRONG tools=3 fab=True (33.5s)
+[ 32/86] INC_0058 SECURITY_MODE_FAILURE        -> OTHER                        WRONG tools=3 fab=True (32.2s)
+[ 33/86] INC_0002 AUTH_BAD_KEY                 -> RRC_CONN_FAIL_CONGESTION     WRONG tools=1 fab=False (16.2s)
+[ 34/86] INC_0064 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (27.5s)
+[ 35/86] INC_0046 PHY_SIGNAL_RLF               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (20.7s)
+[ 36/86] INC_0051 PHY_SIGNAL_RLF               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (28.6s)
+[ 37/86] INC_0045 PHY_SIGNAL_RLF               -> OTHER                        WRONG tools=3 fab=True (27.1s)
+[ 38/86] INC_0042 HANDOVER_RECONFIG_TIMEOUT    -> OTHER                        WRONG tools=4 fab=True (37.6s)
+[ 39/86] INC_0060 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=False (21.5s)
+[ 40/86] INC_0019 RRC_CONN_FAIL_CONGESTION     -> OTHER                        WRONG tools=5 fab=True (52.0s)
+[ 41/86] INC_0010 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=4 fab=True (35.6s)
+[ 42/86] INC_0024 RRC_CONN_FAIL_CONGESTION     -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=4 fab=False (51.9s)
+[ 43/86] INC_0081 DEREGISTRATION_IMPLICIT      -> DEREGISTRATION_IMPLICIT      OK    tools=2 fab=True (24.9s)
+[ 44/86] INC_0014 REG_TIMEOUT_DROPPED_NAS      -> REG_TIMEOUT_DROPPED_NAS      OK    tools=3 fab=True (15.6s)
+[ 45/86] INC_0047 PHY_SIGNAL_RLF               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (34.2s)
+[ 46/86] INC_0018 RRC_CONN_FAIL_CONGESTION     -> RRC_CONN_FAIL_CONGESTION     OK    tools=1 fab=False (16.9s)
+[ 47/86] INC_0067 SERVICE_REQUEST_NO_CONTEXT   -> OTHER                        WRONG tools=3 fab=True (42.8s)
+[ 48/86] INC_0037 HANDOVER_RECONFIG_TIMEOUT    -> OTHER                        WRONG tools=5 fab=True (59.3s)
+[ 49/86] INC_0066 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (20.6s)
+[ 50/86] INC_0083 DEREGISTRATION_IMPLICIT      -> DEREGISTRATION_IMPLICIT      OK    tools=3 fab=False (35.9s)
+[ 51/86] INC_0069 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (57.5s)
+[ 52/86] INC_0073 PAGING_TIMEOUT               -> OTHER                        WRONG tools=3 fab=True (72.3s)
+[ 53/86] INC_0009 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=3 fab=True (87.9s)
+[ 54/86] INC_0062 SERVICE_REQUEST_NO_CONTEXT   -> OTHER                        WRONG tools=4 fab=True (71.7s)
+[ 55/86] INC_0070 PAGING_TIMEOUT               -> PAGING_TIMEOUT               OK    tools=2 fab=True (24.1s)
+[ 56/86] INC_0039 HANDOVER_RECONFIG_TIMEOUT    -> RRC_CONN_FAIL_CONGESTION     WRONG tools=3 fab=True (44.8s)
+[ 57/86] INC_0016 REG_TIMEOUT_DROPPED_NAS      -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=True (21.6s)
+[ 58/86] INC_0085 DEREGISTRATION_IMPLICIT      -> OTHER                        WRONG tools=4 fab=True (40.5s)
+[ 59/86] INC_0063 SERVICE_REQUEST_NO_CONTEXT   -> RRC_CONN_FAIL_CONGESTION     WRONG tools=1 fab=True (21.4s)
+[ 60/86] INC_0043 HANDOVER_RECONFIG_TIMEOUT    -> OTHER                        WRONG tools=3 fab=True (48.8s)
+[ 61/86] INC_0056 SECURITY_MODE_FAILURE        -> OTHER                        WRONG tools=3 fab=True (47.4s)
+[ 62/86] INC_0004 AUTH_BAD_KEY                 -> AUTH_BAD_KEY                 OK    tools=4 fab=False (48.7s)
+[ 63/86] INC_0076 PAGING_TIMEOUT               -> OTHER                        WRONG tools=4 fab=True (35.1s)
+[ 64/86] INC_0038 HANDOVER_RECONFIG_TIMEOUT    -> OTHER                        WRONG tools=2 fab=True (31.3s)
+[ 65/86] INC_0080 DEREGISTRATION_IMPLICIT      -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=3 fab=True (33.7s)
+[ 66/86] INC_0065 SERVICE_REQUEST_NO_CONTEXT   -> OTHER                        WRONG tools=4 fab=True (36.3s)
+[ 67/86] INC_0086 DEREGISTRATION_IMPLICIT      -> OTHER                        WRONG tools=4 fab=True (29.5s)
+[ 68/86] INC_0003 AUTH_BAD_KEY                 -> AUTH_BAD_KEY                 OK    tools=2 fab=False (19.3s)
+[ 69/86] INC_0025 RRC_CONN_FAIL_CONGESTION     -> RRC_CONN_FAIL_CONGESTION     OK    tools=2 fab=False (26.9s)
+[ 70/86] INC_0023 RRC_CONN_FAIL_CONGESTION     -> OTHER                        WRONG tools=2 fab=True (22.4s)
+[ 71/86] INC_0026 RRC_CONN_FAIL_CONGESTION     -> RRC_CONN_FAIL_CONGESTION     OK    tools=2 fab=False (18.4s)
+[ 72/86] INC_0007 REG_TIMEOUT_DROPPED_NAS      -> REG_TIMEOUT_DROPPED_NAS      OK    tools=3 fab=True (18.9s)
+[ 73/86] INC_0057 SECURITY_MODE_FAILURE        -> OTHER                        WRONG tools=3 fab=True (29.6s)
+[ 74/86] INC_0054 SECURITY_MODE_FAILURE        -> OTHER                        WRONG tools=3 fab=True (40.5s)
+[ 75/86] INC_0078 PAGING_TIMEOUT               -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=True (22.9s)
+[ 76/86] INC_0011 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=3 fab=True (22.2s)
+[ 77/86] INC_0001 AUTH_BAD_KEY                 -> OTHER                        WRONG tools=2 fab=True (22.7s)
+[ 78/86] INC_0013 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=3 fab=True (20.2s)
+[ 79/86] INC_0030 HO_MISSED_MEASUREMENT        -> SERVICE_REQUEST_NO_CONTEXT   WRONG tools=3 fab=True (28.7s)
+[ 80/86] INC_0041 HANDOVER_RECONFIG_TIMEOUT    -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (29.9s)
+[ 81/86] INC_0072 PAGING_TIMEOUT               -> OTHER                        WRONG tools=3 fab=True (21.2s)
+[ 82/86] INC_0015 REG_TIMEOUT_DROPPED_NAS      -> OTHER                        WRONG tools=3 fab=True (32.7s)
+[ 83/86] INC_0059 SECURITY_MODE_FAILURE        -> HANDOVER_RECONFIG_TIMEOUT    WRONG tools=1 fab=False (23.0s)
+[ 84/86] INC_0029 HO_MISSED_MEASUREMENT        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=1 fab=True (13.9s)
+[ 85/86] INC_0044 PHY_SIGNAL_RLF               -> OTHER                        WRONG tools=2 fab=True (18.8s)
+[ 86/86] INC_0033 HO_MISSED_MEASUREMENT        -> RRC_CONN_FAIL_CONGESTION     WRONG tools=2 fab=False (12.9s)
+
+=== Root-cause accuracy: 16.3% overall (86 incidents) ===
+fault_type                          n  correct   accuracy
+AUTH_BAD_KEY                        6        3     50.0%
+DEREGISTRATION_IMPLICIT             7        3     42.9%
+HANDOVER_RECONFIG_TIMEOUT          10        0      0.0%
+HO_MISSED_MEASUREMENT               7        0      0.0%
+PAGING_TIMEOUT                     10        1     10.0%
+PHY_SIGNAL_RLF                      8        0      0.0%
+REG_TIMEOUT_DROPPED_NAS            10        2     20.0%
+RRC_CONN_FAIL_CONGESTION           10        4     40.0%
+SECURITY_MODE_FAILURE               8        1     12.5%
+SERVICE_REQUEST_NO_CONTEXT         10        0      0.0%
+
+=== Citation grounding ===
+hallucination rate (>=1 fabricated/misquoted citation): 62.8%
+
+=== Tool-use efficiency ===
+avg_tool_calls: 2.8255813953488373
+median_tool_calls: 3
+n_investigations_at_or_below_median: 69
+n_investigations_above_median: 17
+accuracy_at_or_below_median_calls: 0.17391304347826086
+accuracy_above_median_calls: 0.11764705882352941
+
+Chart saved to eval_results/v2_tools/original/tool_calls_vs_accuracy.png

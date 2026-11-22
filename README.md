@@ -65,6 +65,8 @@ parser/ (C++)     ring buffer -> parse -> LogStore   (pybind11: celltrace_parser
                           |
                           v
 agent/ (Python)   Ollama tool-calling loop over LogStore + rag/ corpus
+                  v1 tools: get_rrc_window, get_nas_window, get_phy_window, rag_lookup
+                  v2 adds:  find_missing_response, gap_vs_timer, last_event_before
                           |
                           v
 eval/             root-cause accuracy, citation-grounding verifier, tool-use stats
@@ -129,14 +131,50 @@ overhead.
 ## Agent
 
 `agent/investigator.py` runs an Ollama tool-calling loop (`qwen2.5:3b-instruct`,
-local) with four tools (`get_rrc_window`, `get_nas_window`, `get_phy_window`,
-`rag_lookup`) plus a required `submit_root_cause` tool that structures the
-final answer (fault type, explanation, and a list of `{layer, ts, quoted_text}`
-citations) so it's never free text with no traceable evidence. The agent picks
-its own window sizes and which layer to check next -- it isn't forced through
-a fixed tool order. If it exhausts its step budget without submitting, one
-final call restricted to only the submit tool forces a best-guess answer
-rather than silently timing out.
+local) with four evidence tools (`get_rrc_window`, `get_nas_window`,
+`get_phy_window`, `rag_lookup`). When the model stops calling tools, a
+separate JSON-schema-constrained call produces the final answer (fault type,
+explanation, `insufficient_evidence` flag, and a list of
+`{layer, ts, quoted_text}` citations), so it's never free text with no
+traceable evidence. (The first version used a native `submit_root_cause`
+tool call for this; it was replaced in the diagnose-then-fix pass below.)
+The agent picks its own window sizes and which layer to check next -- it
+isn't forced through a fixed tool order.
+
+### Absence / timing tools (agent v2)
+
+The four tools above only list what *did* happen. Three of the ten fault
+mechanisms in [DESIGN.md](DESIGN.md) are defined by something that did *not*
+happen (an expected answer never logged) or by a silence whose length matches
+a protocol timer, and the 3B-vs-7B result below showed a bigger model doesn't
+infer that from a list of events. v2 adds three tools that compute it
+explicitly (`agent/tools.py`):
+
+| tool | returns |
+|---|---|
+| `find_missing_response(trigger_msg, expected_msg, window_s)` | for every occurrence of the trigger in the session: whether the expected answer was logged within the window (any layer), the response delay if it was, and whether the log even covers the whole window (so "missing" isn't claimed past the end of the log) |
+| `gap_vs_timer(event_a, event_b, timer_name)` | gap from each `event_a` to the next `event_b` (or to the next repeat, for a retry), the timer's nominal value, and whether the gap matches expiry (\|gap - nominal\| <= max(0.1 s, 20%)); if `event_b` never follows, how long the log continued and whether the timer would have expired unanswered |
+| `last_event_before(t, layer)` | the last RRC/NAS message or PHY measurement strictly before `t` (or across all layers), and how long before |
+
+The timer table (`TIMER_TABLE`) is taken from the specs' timer definitions,
+not from the labeled incidents: T300 (RRC setup guard, 1 s), t304 (handover
+execution, read from the `t304_ms` logged in the RRCReconfiguration, else
+1 s), T3510 (registration guard, 15 s), T3513 (paging guard -- the spec
+leaves this network-dependent; the table uses 2 s, which is also the value
+the synthesizer uses), T3560 (AuthenticationRequest/SecurityModeCommand
+guard, 6 s). Every message these tools mention comes back as an evidence
+object with a `line_id` (`"<LAYER>@<ts>"`) plus layer/ts/msg_type/fields,
+so citations built from it go through the unchanged citation verifier.
+Like the window tools, they are bound to the incident's session; the spec'd
+`ue_id` argument is accepted and ignored.
+
+The v2 system prompt adds one paragraph telling the agent that some failures
+leave no error message and to check unanswered messages, retries, and silent
+layers with these tools. It names no fault type and no expected answer
+(`tests/test_absence_tools.py` fails if any fault-type name appears in the
+prompt or the tool descriptions). The final-answer schema and
+`insufficient_evidence` flag are unchanged. `--agent v1` keeps the old
+prompt and tool set runnable for the before/after comparison.
 
 ### Example transcript
 
@@ -173,9 +211,14 @@ once it had a concrete pattern to match against.
 
 ## Evaluation
 
-Run: `python -m eval.run_eval` (or `make eval` / `make docker-eval`). Every one
-of the 86 labeled incidents is run through a fresh investigation against the
+Run: `python -m eval.run_eval` (or `make eval` / `make docker-eval`; see
+`python -m eval.run_eval --help` for `--agent v1|v2`, `--data-dir`,
+`--model`). Every one of the 86 labeled incidents is run through a fresh investigation against the
 real `LogStore`, using the real local model -- no shortcuts, no mocked tools.
+
+(Part 4, Nov 2026: adding absence/timing tools lowered accuracy to 14/86 on
+this set and 11/85 on a new held-out set -- see "Absence/timing tools: before
+vs after" below. The numbers in this paragraph are the v1 agent.)
 
 **Current numbers (post diagnose-then-fix pass, detailed below): overall
 root-cause accuracy 25.6%, citation hallucination rate 58.1% (86/86
@@ -329,6 +372,19 @@ that the harness can now tell apart from a wrong guess, which is what Part
 2 was actually supposed to add on top of the raw accuracy/hallucination
 numbers.
 
+> **Correction (2026-11-22): the paragraph above is wrong.** All 20 of those
+> `insufficient_evidence: true` answers are the *fallback* the investigator
+> writes when the final JSON fails to parse -- in every one, the model's
+> structured output was cut off by the `num_predict=400` generation cap
+> mid-`explanation`, and the code filled in `fault_type=OTHER,
+> insufficient_evidence=true`. The model itself set the flag 0 times in that
+> run. The set of 20 "honest I-don't-know" incidents and the set of 20
+> truncated answers are identical (checked in `eval/compare.py`). In 3 of the
+> 20 the cut-off JSON had already named the correct fault type. The
+> truncation is counted explicitly in every table in "Absence/timing tools"
+> below. The original paragraph is left in place so the history stays
+> readable.
+
 **Larger local model on the cross-layer gap:**
 
 Re-ran the same agent logic, unchanged, pointed at `qwen2.5:7b-instruct`
@@ -356,6 +412,115 @@ of scaffolding (e.g. a tool that explicitly answers "was message X missing
 between t1 and t2", instead of expecting the model to notice an absence on
 its own from a list of what *did* happen), not a bigger model.
 
+## Absence/timing tools: before vs after (Part 4)
+
+**Result: negative. Adding the three absence/timing tools (see "Absence /
+timing tools" under Agent) made the 3B agent worse overall, on both datasets,
+and did not fix the three 0% fault types.** The tools themselves work -- they
+put the right evidence in front of the model -- but the model mostly doesn't
+turn that evidence into the right label, and the extra tool output pushes
+more final answers past the generation cap.
+
+**Setup.** A new held-out dataset was generated with the unchanged generator
+and a different seed (`--seed 20261122`, 85 incidents, same 10 fault types)
+and frozen (hashes in `eval_results/heldout_manifest.json`) before any agent
+code changed; it shares no incident with the original set. The old agent
+(`--agent v1`: original prompt, four tools) and the new one (`--agent v2`)
+were both run on both datasets with the same model (`qwen2.5:3b-instruct`),
+`num_predict=400`, 10-step budget, final-answer schema and citation verifier.
+The old agent was re-run rather than compared against the September log;
+its re-run on the original set scored 23/86 vs the published 22/86, which
+is the run-to-run noise level to keep in mind. Full tables, per-fault-type
+counts and the tool-call breakdown: `eval_results/comparison.md`
+(`make eval-compare`). Transcripts: `eval_results/v1_rerun/` and
+`eval_results/v2_tools/`.
+
+| metric | original 86: old | original 86: new | held-out 85: old | held-out 85: new |
+|---|---:|---:|---:|---:|
+| root-cause accuracy | 23/86 (26.7%) | 14/86 (16.3%) | 26/85 (30.6%) | 11/85 (12.9%) |
+| citation hallucination | 48/86 (55.8%) | 54/86 (62.8%) | 41/85 (48.2%) | 49/85 (57.6%) |
+| final JSON cut off by the 400-token cap | 19/86 (22.1%) | 36/86 (41.9%) | 14/85 (16.5%) | 32/85 (37.6%) |
+| `insufficient_evidence=true` (incl. the cut-off fallback) | 25/86 | 39/86 | 16/85 | 32/85 |
+| avg tool calls / investigation | 1.80 | 2.83 | 1.98 | 2.89 |
+| investigations that used a new tool | -- | 53/86 | -- | 51/85 |
+| paired: old right / new wrong vs old wrong / new right | | 16 vs 7 (McNemar p = 0.093) | | 18 vs 3 (p = 0.0015) |
+
+| fault type | original: old | original: new | held-out: old | held-out: new |
+|---|---:|---:|---:|---:|
+| AUTH_BAD_KEY | 6/6 | 3/6 | 10/10 | 3/10 |
+| REG_TIMEOUT_DROPPED_NAS | 0/10 | 2/10 | 0/10 | 0/10 |
+| RRC_CONN_FAIL_CONGESTION | 7/10 | 4/10 | 6/7 | 4/7 |
+| HO_MISSED_MEASUREMENT | 0/7 | 0/7 | 0/7 | 0/7 |
+| HANDOVER_RECONFIG_TIMEOUT | 1/10 | 0/10 | 1/7 | 0/7 |
+| PHY_SIGNAL_RLF | 1/8 | 0/8 | 2/9 | 0/9 |
+| SECURITY_MODE_FAILURE | 3/8 | 1/8 | 2/10 | 0/10 |
+| SERVICE_REQUEST_NO_CONTEXT | 4/10 | 0/10 | 2/9 | 1/9 |
+| PAGING_TIMEOUT | 1/10 | 1/10 | 1/10 | 0/10 |
+| DEREGISTRATION_IMPLICIT | 0/7 | 3/7 | 2/6 | 3/6 |
+
+On the three target fault types (27 incidents in each set): original 1/27 ->
+3/27, held-out 1/27 -> 0/27. Neither difference is distinguishable from noise
+(McNemar p = 0.63 and 1.0), and the held-out set -- the one that matters,
+since nothing was designed against it -- shows no gain at all.
+
+**Why it didn't work (read from the transcripts, not guessed):**
+
+- **The tools surface the right evidence; the model doesn't use it.** The
+  agent did call the check the mechanism calls for --
+  `find_missing_response(Paging -> RRCSetupRequest)` 16 times in 12
+  paging investigations across both sets, and
+  `RegistrationRequest -> RegistrationAccept` 10 times in 10 registration
+  investigations. Replaying those 26 calls against the same logs (the tools
+  are deterministic; the trace stores arguments, not results), the tool
+  returned `any_missing: true` in all 26. The final answer was the right
+  fault type in 1 of those 22 investigations. The most common answers after
+  being told "the page was never answered" were `OTHER` and
+  `RRC_CONN_FAIL_CONGESTION`. (Negative control from the same replay: the
+  same registration check, run in 2 sessions where the accept *was* logged,
+  correctly returned nothing missing.)
+- **Truncation doubled.** With longer, richer tool results in context, the
+  final structured answer was cut off by `num_predict=400` in 36/86 and 32/85
+  investigations (old agent: 19/86, 14/85). A cut-off answer scores as wrong
+  and as an ungrounded citation. 9 of the 16 original-set regressions and 11
+  of the 18 held-out regressions are truncations; in 14 of the 36
+  original-set truncations the cut-off JSON had already named the right fault
+  type. The cap is unchanged from the old agent on purpose (same settings),
+  so this is a real cost of the change under the published configuration.
+- **It hurt the easy cases.** `AUTH_BAD_KEY` went 6/6 -> 3/6 and 10/10 ->
+  3/10: with the absence paragraph in the prompt the agent starts running
+  absence checks on sessions whose signature is an explicit reject, and
+  either runs out of answer budget or talks itself into another label.
+- **`HO_MISSED_MEASUREMENT` has no message to anchor an absence check to.**
+  Its trigger is a PHY threshold crossing, not a message, so
+  `find_missing_response` can't express "a MeasurementReport should have
+  followed this signal drop". The agent mostly didn't try, and stayed 0/7 on
+  both sets. A PHY-threshold-to-message check would be the tool for this;
+  it wasn't built here.
+
+**7B model with the new tools** (same 27 original-set incidents of the three
+target types, `--model qwen2.5:7b-instruct`):
+
+| metric | 7B, old tools (Part 3) | 3B, new tools | 7B, new tools |
+|---|---:|---:|---:|
+| accuracy | 0/27 | 3/27 | 1/27 |
+| citation hallucination | 23/27 | 23/27 | 21/27 |
+| final JSON cut off | 5/27 | 13/27 | 8/27 |
+| avg tool calls | 3.93 | 2.78 | 4.07 |
+
+The bigger model with the new tools did not do better than the small one
+(1/27 vs 3/27, both within noise of 0).
+
+**What this changes about Part 3's conclusion.** Part 3 argued the gap was
+the tool set, not model size. That was half right: with the tools, the
+absence is now stated explicitly in the model's context, and both model sizes
+still don't map it to the right label. The remaining bottleneck is the step
+from evidence to fault type, plus the final-answer budget. The next
+experiments, not run here: raise or separate the final-answer `num_predict`
+for both agents (and re-run both, since it changes the baseline too), and
+scope the absence paragraph so it doesn't fire on sessions that already
+contain an explicit reject. `--agent v1` remains the better agent in this
+repo; `make eval` runs v2 so the published v2 numbers are reproducible.
+
 ## Responsible data handling
 
 Simulated UEs carry a SUPI-like synthetic identifier (`imsi_sim_*`) that
@@ -382,7 +547,10 @@ make data           # generates data/logs/*.jsonl + data/incidents.jsonl
 make parser-build    # builds the pybind11 extension
 make parser-test     # Catch2 tests under ASan+UBSan
 make parser-bench    # throughput benchmark
-make eval            # runs the full agent eval (needs `ollama pull qwen2.5:3b-instruct`)
+make eval            # v2 agent on the original 86 (needs `ollama pull qwen2.5:3b-instruct`)
+make data-heldout    # held-out set, seed 20261122
+make eval-v1 eval-heldout eval-7b eval-compare   # the before/after runs + tables
+make test            # Python unit tests
 
 # docker compose (ollama + agent, model auto-pulled on first run)
 make data            # data/ is bind-mounted into the container, generate it first
@@ -397,8 +565,10 @@ synthesizer/            5G RRC/NAS message builders, fault injectors, generator,
 parser/                 C++ streaming parser + pybind11 bridge + Catch2 tests + benchmark
 rag/                    hand-authored failure-pattern corpus + retriever
 agent/                  tool definitions + Ollama tool-calling investigator loop
-eval/                   citation verifier, eval runner, report/chart generation
-tests/                  Python unit tests (synthesizer, citation verifier)
+eval/                   citation verifier, eval runner, report/chart generation, before/after compare
+eval_results/           transcripts + results for every run (v1_rerun/, v2_tools/, comparison.md)
+data_heldout/           held-out dataset (seed 20261122), generated by `make data-heldout`
+tests/                  Python unit tests (synthesizer, citation verifier, absence/timing tools)
 docker-compose.yml, docker/  containerized bring-up
 .github/workflows/ci.yml     C++ tests (ASan+UBSan) + Python tests on every push
 LEARNING.md             protocol/systems notes written for the author, not the reader

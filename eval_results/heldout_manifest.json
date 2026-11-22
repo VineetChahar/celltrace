@@ -1,0 +1,30 @@
+{
+  "generator_seed": 20261122,
+  "generated_at": "2026-11-22",
+  "generator_commit": "49dd5e8 (unmodified)",
+  "note": "frozen before any agent change; ue_pseudo uses a per-run random HMAC key, so a regeneration matches modulo ue_pseudo (sha256_modulo_pseudo)",
+  "files": {
+    "incidents.jsonl": {
+      "sha256": "834cf7330b1158e12b9bc8d9f1acdb3ea21217fc7b81dc6f5707e7e86a86b209",
+      "sha256_modulo_pseudo": "66ad2376ac0d63af9cb029ec4d734a71f802c02b613653553d849ecd87a5e7bf",
+      "lines": 85
+    },
+    "logs/rrc.jsonl": {
+      "sha256": "1b57bcd21fa307bf50d88761ea0a5e7fe0472016fddd8b07321fa878821e985c",
+      "sha256_modulo_pseudo": "aed4d10a70472d8c11c131389feab38d356c7e1ddfb6cb215d399709d6da3a7d",
+      "lines": 613
+    },
+    "logs/nas.jsonl": {
+      "sha256": "94609b83617bd3b5153c93abec062b8bdf585a28531daf9f17f34a55386a8fd5",
+      "sha256_modulo_pseudo": "59bd4f616f4a726fa8fbaf33688eb3742f542539e4c43c01a86d020187b5f4f4",
+      "lines": 820
+    },
+    "logs/phy.jsonl": {
+      "sha256": "f73c2eb3dc1c99fddad7159c21487b6e414a405dea28b464b1b18d30b91289a7",
+      "sha256_modulo_pseudo": "61b741cd757751be5c9aaf27e23836a9b93195c0482049a084830894e8f4a6ec",
+      "lines": 14275
+    }
+  },
+  "overlap_with_original_(fault,reported_ts)": 0,
+  "n_incidents": 85
+}

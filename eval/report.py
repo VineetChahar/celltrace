@@ -83,8 +83,9 @@ def make_chart(results: list[dict], out_path: Path):
     plt.close(fig)
 
 
-def main():
-    results = json.loads((OUT_DIR / "results.json").read_text())
+def main(out_dir: Path = OUT_DIR):
+    out_dir = Path(out_dir)
+    results = json.loads((out_dir / "results.json").read_text())
 
     print(f"\n=== Root-cause accuracy: {overall_accuracy(results):.1%} overall ({len(results)} incidents) ===")
     print(f"{'fault_type':32s} {'n':>4s} {'correct':>8s} {'accuracy':>10s}")
@@ -99,8 +100,8 @@ def main():
     for k, v in eff.items():
         print(f"{k}: {v}")
 
-    make_chart(results, OUT_DIR / "tool_calls_vs_accuracy.png")
-    print(f"\nChart saved to {OUT_DIR / 'tool_calls_vs_accuracy.png'}")
+    make_chart(results, out_dir / "tool_calls_vs_accuracy.png")
+    print(f"\nChart saved to {out_dir / 'tool_calls_vs_accuracy.png'}")
 
     summary = {
         "overall_accuracy": overall_accuracy(results),
@@ -109,8 +110,9 @@ def main():
         "tool_use_efficiency": eff,
         "n_incidents": len(results),
     }
-    (OUT_DIR / "summary.json").write_text(json.dumps(summary, indent=2))
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(Path(sys.argv[1]) if len(sys.argv) > 1 else OUT_DIR)

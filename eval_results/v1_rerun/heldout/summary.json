@@ -1,0 +1,65 @@
+{
+  "overall_accuracy": 0.3058823529411765,
+  "accuracy_by_fault_type": {
+    "AUTH_BAD_KEY": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1.0
+    },
+    "DEREGISTRATION_IMPLICIT": {
+      "n": 6,
+      "correct": 2,
+      "accuracy": 0.3333333333333333
+    },
+    "HANDOVER_RECONFIG_TIMEOUT": {
+      "n": 7,
+      "correct": 1,
+      "accuracy": 0.14285714285714285
+    },
+    "HO_MISSED_MEASUREMENT": {
+      "n": 7,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "PAGING_TIMEOUT": {
+      "n": 10,
+      "correct": 1,
+      "accuracy": 0.1
+    },
+    "PHY_SIGNAL_RLF": {
+      "n": 9,
+      "correct": 2,
+      "accuracy": 0.2222222222222222
+    },
+    "REG_TIMEOUT_DROPPED_NAS": {
+      "n": 10,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "RRC_CONN_FAIL_CONGESTION": {
+      "n": 7,
+      "correct": 6,
+      "accuracy": 0.8571428571428571
+    },
+    "SECURITY_MODE_FAILURE": {
+      "n": 10,
+      "correct": 2,
+      "accuracy": 0.2
+    },
+    "SERVICE_REQUEST_NO_CONTEXT": {
+      "n": 9,
+      "correct": 2,
+      "accuracy": 0.2222222222222222
+    }
+  },
+  "hallucination_rate": 0.4823529411764706,
+  "tool_use_efficiency": {
+    "avg_tool_calls": 1.9764705882352942,
+    "median_tool_calls": 2,
+    "n_investigations_at_or_below_median": 74,
+    "n_investigations_above_median": 11,
+    "accuracy_at_or_below_median_calls": 0.32432432432432434,
+    "accuracy_above_median_calls": 0.18181818181818182
+  },
+  "n_incidents": 85
+}
